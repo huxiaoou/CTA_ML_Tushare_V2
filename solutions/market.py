@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from loguru import logger
-from husfort.qutility import qtimer, check_and_makedirs
+from husfort.qutility import check_and_makedirs
 from husfort.qcalendar import CCalendar
 from husfort.qsqlite import CDbStruct, CMgrSqlDb
 from solutions.shared import convert_mkt_idx
@@ -77,7 +77,6 @@ def sort_columns(new_data: pd.DataFrame, db_struct_mkt: CDbStruct) -> pd.DataFra
     return new_data[db_struct_mkt.table.vars.names]
 
 
-@qtimer
 def main_market(
         bgn_date: str,
         stp_date: str,

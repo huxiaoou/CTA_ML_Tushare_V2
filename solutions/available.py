@@ -1,5 +1,5 @@
 import pandas as pd
-from husfort.qutility import qtimer, check_and_makedirs
+from husfort.qutility import check_and_makedirs
 from husfort.qcalendar import CCalendar
 from husfort.qsqlite import CDbStruct, CMgrSqlDb
 from typedef import TUniverse, CCfgAvlbUnvrs
@@ -71,7 +71,6 @@ def get_available_universe(
     return update_df[db_struct_avlb.table.vars.names]
 
 
-@qtimer
 def main_available(
         bgn_date: str,
         stp_date: str,

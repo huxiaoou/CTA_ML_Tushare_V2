@@ -42,9 +42,6 @@ def parse_args():
                  "TA",),
     )
 
-    # switch: test return
-    arg_parser_subs.add_parser(name="feature_selection", help="Select features")
-
     return arg_parser.parse_args()
 
 

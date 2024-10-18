@@ -139,3 +139,15 @@ def gen_fac_neu_db(
             value_columns=[CSqlVar(fn, "REAL") for fn in factor_names],
         )
     )
+
+
+def gen_sig_db(db_save_dir: str, signal_id: str) -> CDbStruct:
+    return CDbStruct(
+        db_save_dir=db_save_dir,
+        db_name=f"{signal_id}.db",
+        table=CSqlTable(
+            name="signal",
+            primary_keys=[CSqlVar("trade_date", "TEXT"), CSqlVar("instrument", "TEXT")],
+            value_columns=[CSqlVar("weight", "REAL")],
+        )
+    )

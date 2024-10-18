@@ -1,3 +1,4 @@
+import os
 import itertools as ittl
 from typing import NewType, Literal
 from dataclasses import dataclass
@@ -44,13 +45,17 @@ Part II: factors configuration
 ----------------------------------
 """
 
+TSaveDir = NewType("TSaveDir", str)
 TFactorClass = NewType("TFactorClass", str)
 TFactorName = NewType("TFactorName", str)
 TFactorNames = NewType("TFactorNames", list[TFactorName])
-TFactorClassAndNames = NewType("TFactorClassAndNames", tuple[TFactorClass, TFactorNames])
-TFactorComb = NewType("TFactorComb", tuple[TFactorClass, TFactorNames, str])  # str is for subdirectory
-TFactor = NewType("TFactor", tuple[TFactorClass, TFactorName])
-TFactorsPool = NewType("TFactorsPool", list[TFactorComb])
+TFactor = NewType("TFactor", tuple[TFactorClass, TFactorName, TSaveDir])
+TFactors = NewType("TFactors", list[TFactor])
+
+
+# TFactorClassAndNames = NewType("TFactorClassAndNames", tuple[TFactorClass, TFactorNames])
+# TFactorComb = NewType("TFactorComb", tuple[TFactorClass, TFactorNames, str])  # str is for subdirectory
+# TFactorsPool = NewType("TFactorsPool", list[TFactorComb])
 
 
 @dataclass(frozen=True)
@@ -67,23 +72,33 @@ class CCfgFactor:
     def factor_names_neu(self) -> TFactorNames:
         return TFactorNames([TFactorName(_.replace("RAW", "NEU")) for _ in self.factor_names])
 
-    def get_raw_class_and_names(self) -> TFactorClassAndNames:
-        return TFactorClassAndNames((self.factor_class, self.factor_names))
+    # def get_raw_class_and_names(self) -> TFactorClassAndNames:
+    #     return TFactorClassAndNames((self.factor_class, self.factor_names))
+    #
+    # def get_neu_class_and_names(self) -> TFactorClassAndNames:
+    #     neu_names = TFactorNames([TFactorName(_.replace("RAW", "NEU")) for _ in self.factor_names])
+    #     return TFactorClassAndNames((self.factor_class, neu_names))
+    #
+    # def get_combs_raw(self, sub_dir: str) -> TFactorsPool:
+    #     factor_class, factor_names = self.get_raw_class_and_names()
+    #     return TFactorsPool([TFactorComb((factor_class, factor_names, sub_dir))])
+    #
+    # def get_combs_neu(self, sub_dir: str) -> TFactorsPool:
+    #     factor_class, factor_names = self.get_neu_class_and_names()
+    #     return TFactorsPool([TFactorComb((factor_class, factor_names, sub_dir))])
+    #
+    # def get_combs(self, sub_dir: str) -> TFactorsPool:
+    #     return TFactorsPool(self.get_combs_raw(sub_dir) + self.get_combs_neu(sub_dir))
 
-    def get_neu_class_and_names(self) -> TFactorClassAndNames:
-        neu_names = TFactorNames([TFactorName(_.replace("RAW", "NEU")) for _ in self.factor_names])
-        return TFactorClassAndNames((self.factor_class, neu_names))
+    def get_factors_raw(self, save_root_dir_raw: str) -> TFactors:
+        save_dir = TSaveDir(save_root_dir_raw)
+        res = [TFactor((self.factor_class, factor_name, save_dir)) for factor_name in self.factor_names]
+        return TFactors(res)
 
-    def get_combs_raw(self, sub_dir: str) -> TFactorsPool:
-        factor_class, factor_names = self.get_raw_class_and_names()
-        return TFactorsPool([TFactorComb((factor_class, factor_names, sub_dir))])
-
-    def get_combs_neu(self, sub_dir: str) -> TFactorsPool:
-        factor_class, factor_names = self.get_neu_class_and_names()
-        return TFactorsPool([TFactorComb((factor_class, factor_names, sub_dir))])
-
-    def get_combs(self, sub_dir: str) -> TFactorsPool:
-        return TFactorsPool(self.get_combs_raw(sub_dir) + self.get_combs_neu(sub_dir))
+    def get_factors_neu(self, save_root_dir_neu: str) -> TFactors:
+        save_dir = TSaveDir(save_root_dir_neu)
+        res = [TFactor((self.factor_class, factor_name, save_dir)) for factor_name in self.factor_names_neu]
+        return TFactors(res)
 
 
 # cfg for factors
@@ -600,6 +615,22 @@ class CCfgFactors:
                 res.append(v)
         return res
 
+    def get_factors_raw(self, save_root_dir_raw: str) -> TFactors:
+        res: TFactors = TFactors([])
+        for _, v in vars(self).items():
+            if v is not None:
+                factors = v.get_factors_raw(save_root_dir_raw)
+                res.extend(factors)
+        return res
+
+    def get_factors_neu(self, save_root_dir_neu: str) -> TFactors:
+        res: TFactors = TFactors([])
+        for _, v in vars(self).items():
+            if v is not None:
+                factors = v.get_factors_neu(save_root_dir_neu)
+                res.extend(factors)
+        return res
+
 
 """
 --------------------------------------
@@ -671,6 +702,7 @@ class CCfgProj:
     test_return_dir: str
     factors_by_instru_dir: str
     neutral_by_instru_dir: str
+    signals_frm_fac_neu_dir: str
 
     # --- project parameters
     universe: TUniverse

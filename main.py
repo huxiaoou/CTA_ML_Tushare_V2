@@ -42,11 +42,15 @@ def parse_args():
                  "TA",),
     )
 
+    # switch: signals
+    arg_parser_sub = arg_parser_subs.add_parser(name="signals", help="generate signals")
+    arg_parser_sub.add_argument("--type", type=str, choices=("facNeu",))
+
     return arg_parser.parse_args()
 
 
 if __name__ == "__main__":
-    from project_config import proj_cfg, db_struct_cfg
+    from project_config import proj_cfg, db_struct_cfg, cfg_factors
     from husfort.qlog import define_logger
     from husfort.qcalendar import CCalendar
 
@@ -396,5 +400,21 @@ if __name__ == "__main__":
                 neutral_by_instru_dir=proj_cfg.neutral_by_instru_dir,
             )
             neutralizer.main_neu(bgn_date=bgn_date, stp_date=stp_date, calendar=calendar)
+    elif args.switch == "signals":
+        if args.type == "facNeu":
+            from solutions.signals import main_signals_from_factor_neu
+
+            factors_neu = cfg_factors.get_factors_neu(proj_cfg.neutral_by_instru_dir)
+            main_signals_from_factor_neu(
+                factors=factors_neu,
+                signal_save_dir=proj_cfg.signals_frm_fac_neu_dir,
+                bgn_date=bgn_date,
+                stp_date=stp_date,
+                calendar=calendar,
+                call_multiprocess=not args.nomp,
+                processes=args.processes,
+            )
+        else:
+            raise ValueError(f"args.type == {args.type} is illegal")
     else:
         raise ValueError(f"args.switch = {args.switch} is illegal")

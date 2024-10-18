@@ -44,3 +44,6 @@ python main.py --bgn $bgn_date --stp $stp_date factor --fclass EXR
 python main.py --bgn $bgn_date --stp $stp_date factor --fclass SMT
 python main.py --bgn $bgn_date --stp $stp_date factor --fclass RWTC
 python main.py --bgn $bgn_date --stp $stp_date factor --fclass TA
+
+#
+python main.py --bgn $bgn_date_sig --stp $stp_date signals --type facNeu

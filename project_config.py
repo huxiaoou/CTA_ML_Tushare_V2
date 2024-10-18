@@ -60,6 +60,8 @@ proj_cfg = CCfgProj(
         _config["path"]["project_root_dir"], _config["path"]["factors_by_instru_dir"]),
     neutral_by_instru_dir=os.path.join(  # type:ignore
         _config["path"]["project_root_dir"], _config["path"]["neutral_by_instru_dir"]),
+    signals_frm_fac_neu_dir=os.path.join(  # type:ignore
+        _config["path"]["project_root_dir"], _config["path"]["signals_frm_fac_neu_dir"]),
 
     universe=universe,
     avlb_unvrs=CCfgAvlbUnvrs(**_config["available"]),
@@ -170,7 +172,19 @@ if __name__ == "__main__":
         print(f"{instru:>6s}: {sectors}")
 
     print(sep)
-    d = cfg_factors.__dict__
-    print(f"Size of factors = {len(d)}")
+    d = {k: v for k, v in vars(cfg_factors).items() if v is not None}
+    print(f"Size of activated factors class = {len(d)}")
     for factor, cfg in d.items():
         print(f"{factor:>6s}: {cfg}")
+
+    print(sep)
+    factors = cfg_factors.get_factors_raw(proj_cfg.factors_by_instru_dir)
+    print(f"Size of raw factors = {len(factors)}")
+    for factor in factors:
+        print(factor)
+
+    print(sep)
+    print(f"Size of neu factors = {len(factors)}")
+    factors = cfg_factors.get_factors_neu(proj_cfg.neutral_by_instru_dir)
+    for factor in factors:
+        print(factor)

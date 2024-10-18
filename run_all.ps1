@@ -17,3 +17,30 @@ Remove-Item -Recurse E:\Data\Projects\CTA_ML_Tushare_V2\*
 python main.py --bgn $bgn_date --stp $stp_date available
 python main.py --bgn $bgn_date --stp $stp_date market
 python main.py --bgn $bgn_date --stp $stp_date test_return
+
+# --- factor
+python main.py --bgn $bgn_date --stp $stp_date factor --fclass MTM
+python main.py --bgn $bgn_date --stp $stp_date factor --fclass SKEW
+python main.py --bgn $bgn_date --stp $stp_date factor --fclass RS
+python main.py --bgn $bgn_date --stp $stp_date factor --fclass BASIS
+python main.py --bgn $bgn_date --stp $stp_date factor --fclass TS
+python main.py --bgn $bgn_date --stp $stp_date factor --fclass S0BETA
+python main.py --bgn $bgn_date --stp $stp_date factor --fclass S1BETA
+python main.py --bgn $bgn_date --stp $stp_date factor --fclass CBETA
+python main.py --bgn $bgn_date --stp $stp_date factor --fclass IBETA
+python main.py --bgn $bgn_date --stp $stp_date factor --fclass PBETA
+python main.py --bgn $bgn_date --stp $stp_date factor --fclass CTP
+python main.py --bgn $bgn_date --stp $stp_date factor --fclass CTR
+python main.py --bgn $bgn_date --stp $stp_date factor --fclass CVP
+python main.py --bgn $bgn_date --stp $stp_date factor --fclass CVR
+python main.py --bgn $bgn_date --stp $stp_date factor --fclass CSP
+python main.py --bgn $bgn_date --stp $stp_date factor --fclass CSR
+python main.py --bgn $bgn_date --stp $stp_date factor --fclass NOI
+python main.py --bgn $bgn_date --stp $stp_date factor --fclass NDOI
+python main.py --bgn $bgn_date --stp $stp_date factor --fclass WNOI
+python main.py --bgn $bgn_date --stp $stp_date factor --fclass WNDOI
+python main.py --bgn $bgn_date --stp $stp_date factor --fclass AMP
+python main.py --bgn $bgn_date --stp $stp_date factor --fclass EXR
+python main.py --bgn $bgn_date --stp $stp_date factor --fclass SMT
+python main.py --bgn $bgn_date --stp $stp_date factor --fclass RWTC
+python main.py --bgn $bgn_date --stp $stp_date factor --fclass TA

@@ -1,7 +1,9 @@
 import os
 import pandas as pd
 import scipy.stats as sps
+from husfort.qutility import qtimer
 from husfort.qsqlite import CDbStruct, CSqlTable, CSqlVar
+from typedef import TFactorClass, TFactorNames
 
 
 def convert_mkt_idx(mkt_idx: str, prefix: str = "I") -> str:
@@ -12,6 +14,7 @@ def convert_mkt_idx(mkt_idx: str, prefix: str = "I") -> str:
 # ------ algorithm: neutralization ------
 # ---------------------------------------
 
+@qtimer
 def neutralize_by_date(
         raw_data: pd.DataFrame,
         old_names: list[str],
@@ -99,5 +102,35 @@ def gen_tst_ret_neu_db(db_save_root_dir: str, save_id: str, rets: list[str]) -> 
             name="test_return",
             primary_keys=[CSqlVar("trade_date", "TEXT"), CSqlVar("instrument", "TEXT")],
             value_columns=[CSqlVar(ret, "REAL") for ret in rets],
+        )
+    )
+
+
+def gen_fac_raw_db(
+        instru: str, db_save_root_dir: str,
+        factor_class: TFactorClass, factor_names: TFactorNames
+) -> CDbStruct:
+    return CDbStruct(
+        db_save_dir=os.path.join(db_save_root_dir, factor_class),
+        db_name=f"{instru}.db",
+        table=CSqlTable(
+            name="factor",
+            primary_keys=[CSqlVar("trade_date", "TEXT")],
+            value_columns=[CSqlVar("ticker", "TEXT")] + [CSqlVar(fn, "REAL") for fn in factor_names],
+        )
+    )
+
+
+def gen_fac_neu_db(
+        db_save_root_dir: str,
+        factor_class: TFactorClass, factor_names: TFactorNames
+) -> CDbStruct:
+    return CDbStruct(
+        db_save_dir=os.path.join(db_save_root_dir, factor_class),
+        db_name=f"{factor_class}.db",
+        table=CSqlTable(
+            name="factor",
+            primary_keys=[CSqlVar("trade_date", "TEXT"), CSqlVar("instrument", "TEXT")],
+            value_columns=[CSqlVar(fn, "REAL") for fn in factor_names],
         )
     )

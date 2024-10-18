@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 import scipy.stats as sps
+from rich.progress import Progress
 from husfort.qutility import qtimer
 from husfort.qsqlite import CDbStruct, CSqlTable, CSqlVar
 from typedef import TFactorClass, TFactorNames
@@ -35,38 +36,44 @@ def neutralize_by_date(
              columns = [date_name, instru_name, sec_name] + new_names
     """
 
-    rename_mapper = {o: n for o, n in zip(old_names, new_names)}
-    # --- get instrument rank for each day
-    rank_data = (
-        raw_data[[date_name] + old_names]
-        .groupby(by=date_name, group_keys=False)[old_names]
-        .apply(lambda z: z.rank() / (z.count() + 1))
-    )
+    with Progress() as pb:
+        task = pb.add_task(description="Neutralizing", total=3)
 
-    # --- map rank to random variable with normal distribution
-    norm_rv_data = rank_data.map(sps.norm.ppf)
-    norm_data = pd.merge(
-        left=raw_data[[date_name, instru_name, sec_name]],
-        right=norm_rv_data,
-        how="inner",
-        left_index=True, right_index=True,
-    )
+        # --- get instrument rank for each day
+        rank_data = (
+            raw_data[[date_name] + old_names]
+            .groupby(by=date_name, group_keys=False)[old_names]
+            .apply(lambda z: z.rank() / (z.count() + 1))
+        )
+        pb.update(task, advance=1)
 
-    # --- neutralize for each sector and day
-    neu_data = (
-        norm_data[[date_name, sec_name] + old_names]
-        .groupby(by=[date_name, sec_name], group_keys=False)[old_names]
-        .apply(lambda z: z - z.mean())
-    )
-    res_data = pd.merge(
-        left=raw_data[[date_name, instru_name, sec_name]],
-        right=neu_data,
-        how="inner",
-        left_index=True, right_index=True
-    ).rename(columns=rename_mapper)
+        # --- map rank to random variable with normal distribution
+        norm_rv_data = rank_data.apply(sps.norm.ppf)
+        norm_data = pd.merge(
+            left=raw_data[[date_name, instru_name, sec_name]],
+            right=norm_rv_data,
+            how="inner",
+            left_index=True, right_index=True,
+        )
+        pb.update(task, advance=1)
 
-    # --- reformat
-    res_data = res_data[[date_name, instru_name, sec_name] + new_names]
+        # --- neutralize for each sector and day
+        neu_data = (
+            norm_data[[date_name, sec_name] + old_names]
+            .groupby(by=[date_name, sec_name], group_keys=False)[old_names]
+            .apply(lambda z: z - z.mean())
+        )
+        rename_mapper = {o: n for o, n in zip(old_names, new_names)}
+        res_data = pd.merge(
+            left=raw_data[[date_name, instru_name, sec_name]],
+            right=neu_data,
+            how="inner",
+            left_index=True, right_index=True
+        ).rename(columns=rename_mapper)
+        pb.update(task, advance=1)
+
+        # --- reformat
+        res_data = res_data[[date_name, instru_name, sec_name] + new_names]
     return res_data
 
 

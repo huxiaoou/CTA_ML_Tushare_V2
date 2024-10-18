@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import multiprocessing as mp
 from rich.progress import track, Progress
-from husfort.qutility import SFG, error_handler, check_and_makedirs, qtimer
+from husfort.qutility import SFY, error_handler, check_and_makedirs, qtimer
 from husfort.qsqlite import CDbStruct, CMgrSqlDb
 from husfort.qcalendar import CCalendar
 from typedef import TFactorClass, TFactorNames, TUniverse, TFactorName
@@ -177,7 +177,7 @@ class CFactorRaw(CFactorGeneric):
 
     @qtimer
     def main_raw(self, bgn_date: str, stp_date: str, calendar: CCalendar, call_multiprocess: bool, processes: int):
-        description = f"Calculating factor {SFG(self.factor_class)}"
+        description = f"Calculating factor {SFY(self.factor_class)}"
         if call_multiprocess:
             with Progress() as pb:
                 main_task = pb.add_task(description, total=len(self.universe))

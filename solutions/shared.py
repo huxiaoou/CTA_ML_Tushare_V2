@@ -2,7 +2,6 @@ import os
 import pandas as pd
 import scipy.stats as sps
 from rich.progress import Progress
-from husfort.qutility import qtimer
 from husfort.qsqlite import CDbStruct, CSqlTable, CSqlVar
 from typedef import TFactorClass, TFactorNames
 
@@ -15,7 +14,6 @@ def convert_mkt_idx(mkt_idx: str, prefix: str = "I") -> str:
 # ------ algorithm: neutralization ------
 # ---------------------------------------
 
-@qtimer
 def neutralize_by_date(
         raw_data: pd.DataFrame,
         old_names: list[str],

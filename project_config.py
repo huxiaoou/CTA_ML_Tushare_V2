@@ -60,8 +60,12 @@ proj_cfg = CCfgProj(
         _config["path"]["project_root_dir"], _config["path"]["factors_by_instru_dir"]),
     neutral_by_instru_dir=os.path.join(  # type:ignore
         _config["path"]["project_root_dir"], _config["path"]["neutral_by_instru_dir"]),
-    signals_frm_fac_neu_dir=os.path.join(  # type:ignore
-        _config["path"]["project_root_dir"], _config["path"]["signals_frm_fac_neu_dir"]),
+    sig_frm_fac_neu_dir=os.path.join(  # type:ignore
+        _config["path"]["project_root_dir"], _config["path"]["sig_frm_fac_neu_dir"]),
+    sim_frm_fac_neu_dir=os.path.join(  # type:ignore
+        _config["path"]["project_root_dir"], _config["path"]["sim_frm_fac_neu_dir"]),
+    evl_frm_fac_neu_dir=os.path.join(  # type:ignore
+        _config["path"]["project_root_dir"], _config["path"]["evl_frm_fac_neu_dir"]),
 
     universe=universe,
     avlb_unvrs=CCfgAvlbUnvrs(**_config["available"]),

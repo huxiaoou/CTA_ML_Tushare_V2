@@ -1,4 +1,3 @@
-import os
 import itertools as ittl
 from typing import NewType, Literal
 from dataclasses import dataclass
@@ -16,7 +15,7 @@ TReturnNames = NewType("TReturnNames", list[TReturnName])
 TReturnComb = NewType("TReturnComb", tuple[TReturnClass, TReturnName, str])
 TReturn = NewType("TReturn", tuple[TReturnClass, TReturnName])
 TRetType = Literal["RAW", "NEU"]
-TRetPrc = Literal["Opn", "CLs"]
+TRetPrc = Literal["Opn", "Cls"]
 
 
 @dataclass(frozen=True)
@@ -37,6 +36,10 @@ class CRet:
     @property
     def ret_name(self) -> TReturnName:
         return TReturnName(f"{self.ret_prc}{self.win:03d}L{self.lag:d}{self.ret_type}")
+
+    @property
+    def save_id(self) -> str:
+        return f"{self.win:03d}L{self.lag:d}{self.ret_type}"
 
 
 """
@@ -649,8 +652,24 @@ TInstruName = NewType("TInstruName", str)
 TUniverse = NewType("TUniverse", dict[TInstruName, CCfgInstru])
 
 """
+--------------------------------------
+Part IV: Simulations
+--------------------------------------
+"""
+
+
+@dataclass(frozen=True)
+class CSimArgs:
+    sim_id: str
+    tgt_ret: CRet
+    db_struct_sig: CDbStruct
+    db_struct_ret: CDbStruct
+    cost: float
+
+
+"""
 --------------------------------
-Part IV: generic and project
+Part V: generic and project
 --------------------------------
 """
 
@@ -702,7 +721,9 @@ class CCfgProj:
     test_return_dir: str
     factors_by_instru_dir: str
     neutral_by_instru_dir: str
-    signals_frm_fac_neu_dir: str
+    sig_frm_fac_neu_dir: str
+    sim_frm_fac_neu_dir: str
+    evl_frm_fac_neu_dir: str
 
     # --- project parameters
     universe: TUniverse
@@ -717,6 +738,15 @@ class CCfgProj:
     @property
     def test_rets_wins(self) -> list[int]:
         return self.prd.wins + self.sim.wins
+
+    def get_raw_test_rets(self) -> list[CRet]:
+        res: list[CRet] = []
+        for win in self.sim.wins:
+            ret_opn = CRet(ret_type="RAW", ret_prc="Opn", win=win, lag=self.const.LAG)
+            ret_cls = CRet(ret_type="RAW", ret_prc="Cls", win=win, lag=self.const.LAG)
+            res.append(ret_opn)
+            res.append(ret_cls)
+        return res
 
 
 @dataclass(frozen=True)

@@ -1,9 +1,10 @@
 import os
 import pandas as pd
 import scipy.stats as sps
+import itertools as ittl
 from rich.progress import Progress
 from husfort.qsqlite import CDbStruct, CSqlTable, CSqlVar
-from typedef import TFactorClass, TFactorNames
+from typedef import TFactorClass, TFactorNames, TFactors, CRet, CSimArgs
 
 
 def convert_mkt_idx(mkt_idx: str, prefix: str = "I") -> str:
@@ -171,3 +172,45 @@ def gen_sig_db(db_save_dir: str, signal_id: str) -> CDbStruct:
             value_columns=[CSqlVar("weight", "REAL")],
         )
     )
+
+
+def gen_nav_db(db_save_dir: str, save_id: str) -> CDbStruct:
+    return CDbStruct(
+        db_save_dir=db_save_dir,
+        db_name=f"{save_id}.db",
+        table=CSqlTable(
+            name="nav",
+            primary_keys=[CSqlVar("trade_date", "TEXT")],
+            value_columns=[
+                CSqlVar("raw_ret", "REAL"),
+                CSqlVar("dlt_wgt", "REAL"),
+                CSqlVar("cost", "REAL"),
+                CSqlVar("net_ret", "REAL"),
+                CSqlVar("nav", "REAL"),
+            ],
+        )
+    )
+
+
+# -----------------------------------------
+# ------ arguments about simulations ------
+# -----------------------------------------
+
+def get_sim_args_fac_neu(
+        factors: TFactors, maws: list[int], rets: list[CRet],
+        signals_dir: str, ret_dir: str,
+        cost: float
+) -> list[CSimArgs]:
+    res: list[CSimArgs] = []
+    for factor, maw, ret in ittl.product(factors, maws, rets):
+        signal_id = f"{factor[1]}_MA{maw:02d}"
+        ret_names = [ret.ret_name]
+        sim_args = CSimArgs(
+            sim_id=f"{factor[1]}_MA{maw:02d}_{ret.ret_name}",
+            tgt_ret=ret,
+            db_struct_sig=gen_sig_db(db_save_dir=signals_dir, signal_id=signal_id),
+            db_struct_ret=gen_tst_ret_raw_db(db_save_root_dir=ret_dir, save_id=ret.save_id, rets=ret_names),
+            cost=cost,
+        )
+        res.append(sim_args)
+    return res

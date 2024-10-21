@@ -648,6 +648,8 @@ class CSimArgs:
     cost: float
 
 
+TSimGrpId = tuple[TFactorClass, TRetPrc, int]
+
 """
 --------------------------------
 Part V: generic and project

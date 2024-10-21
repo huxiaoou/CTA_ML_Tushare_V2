@@ -77,7 +77,7 @@ class CSignalFromFactorNeu(_CSignal):
         self.factor = factor
         self.factor_save_root_dir = factor_save_root_dir
         self.maw = maw
-        signal_id = f"{factor.factor_name}_MA{maw:02d}"
+        signal_id = f"{factor.factor_name}.MA{maw:02d}"
         super().__init__(signal_save_dir=signal_save_dir, signal_id=signal_id)
 
     @property
@@ -176,7 +176,7 @@ def main_signals_from_factor_neu(
                 pool.close()
                 pool.join()
     else:
-        for factor, maw in track(iter_args, description=desc):
+        for factor, maw in track(list(iter_args), description=desc):
             process_for_signal_from_factor_neu(
                 factor=factor,
                 factor_save_root_dir=factor_save_root_dir,

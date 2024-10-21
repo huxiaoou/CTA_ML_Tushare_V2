@@ -50,6 +50,10 @@ def parse_args():
     arg_parser_sub = arg_parser_subs.add_parser(name="simulations", help="simulate from signals")
     arg_parser_sub.add_argument("--type", type=str, choices=("facNeu",))
 
+    # switch: evaluations
+    arg_parser_sub = arg_parser_subs.add_parser(name="evaluations", help="evaluate simulations")
+    arg_parser_sub.add_argument("--type", type=str, choices=("facNeu",))
+
     return arg_parser.parse_args()
 
 
@@ -444,6 +448,48 @@ if __name__ == "__main__":
                 call_multiprocess=not args.nomp,
                 processes=args.processes,
             )
+        else:
+            raise ValueError(f"args.type == {args.type} is illegal")
+    elif args.switch == "evaluations":
+        if args.type == "facNeu":
+            from solutions.shared import get_sim_args_fac_neu, get_sim_args_fac_neu_by_class
+            from solutions.evaluations import main_evl_fac_neu, main_plt_fac_neu
+
+            sim_args_list = get_sim_args_fac_neu(
+                factors=cfg_factors.get_factors_neu(),
+                maws=proj_cfg.prd.wins,
+                rets=proj_cfg.get_raw_test_rets(),
+                signals_dir=proj_cfg.sig_frm_fac_neu_dir,
+                ret_dir=proj_cfg.test_return_dir,
+                cost=0,
+            )
+            main_evl_fac_neu(
+                sim_args_list=sim_args_list,
+                sim_frm_fac_neu_dir=proj_cfg.sim_frm_fac_neu_dir,
+                evl_frm_fac_neu_dir=proj_cfg.evl_frm_fac_neu_dir,
+                bgn_date=bgn_date,
+                stp_date=stp_date,
+                call_multiprocess=not args.nomp,
+                processes=args.processes,
+            )
+
+            # plot by group
+            grouped_sim_args = get_sim_args_fac_neu_by_class(
+                factors=cfg_factors.get_factors_neu(),
+                maws=proj_cfg.prd.wins,
+                rets=proj_cfg.get_raw_test_rets(),
+                signals_dir=proj_cfg.sig_frm_fac_neu_dir,
+                ret_dir=proj_cfg.test_return_dir,
+                cost=0,
+            )
+            main_plt_fac_neu(
+                grouped_sim_args=grouped_sim_args,
+                sim_frm_fac_neu_dir=proj_cfg.sim_frm_fac_neu_dir,
+                evl_frm_fac_neu_dir=proj_cfg.evl_frm_fac_neu_dir,
+                bgn_date=bgn_date,
+                stp_date=stp_date,
+            )
+
 
         else:
             raise ValueError(f"args.type == {args.type} is illegal")

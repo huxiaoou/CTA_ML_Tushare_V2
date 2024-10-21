@@ -3,7 +3,6 @@ import pandas as pd
 import talib as ta
 import itertools as ittl
 from husfort.qcalendar import CCalendar
-
 from typedef import (
     CCfgFactorMTM, CCfgFactorSKEW, CCfgFactorRS,
     CCfgFactorBASIS, CCfgFactorTS,

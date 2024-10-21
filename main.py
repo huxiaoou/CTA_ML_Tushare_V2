@@ -408,11 +408,12 @@ if __name__ == "__main__":
         if args.type == "facNeu":
             from solutions.signals import main_signals_from_factor_neu
 
-            factors_neu = cfg_factors.get_factors_neu(proj_cfg.neutral_by_instru_dir)
+            factors_neu = cfg_factors.get_factors_neu()
             main_signals_from_factor_neu(
                 factors=factors_neu,
+                factor_save_root_dir=proj_cfg.neutral_by_instru_dir,
                 maws=proj_cfg.prd.wins,
-                signal_save_dir=proj_cfg.signals_frm_fac_neu_dir,
+                signal_save_dir=proj_cfg.sig_frm_fac_neu_dir,
                 bgn_date=bgn_date,
                 stp_date=stp_date,
                 calendar=calendar,
@@ -427,7 +428,7 @@ if __name__ == "__main__":
             from solutions.simulations import main_simulations
 
             sim_args_list = get_sim_args_fac_neu(
-                factors=cfg_factors.get_factors_neu(proj_cfg.neutral_by_instru_dir),
+                factors=cfg_factors.get_factors_neu(),
                 maws=proj_cfg.prd.wins,
                 rets=proj_cfg.get_raw_test_rets(),
                 signals_dir=proj_cfg.sig_frm_fac_neu_dir,

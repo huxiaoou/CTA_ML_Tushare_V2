@@ -6,7 +6,7 @@ from husfort.qutility import check_and_makedirs, error_handler
 from husfort.qsqlite import CMgrSqlDb
 from husfort.qcalendar import CCalendar
 from solutions.shared import gen_sig_db, gen_fac_neu_db
-from typedef import TFactor, TFactors, TFactorClass, TFactorName, TSaveDir, TFactorNames
+from typedef import CFactor, TFactors, TFactorClass, TFactorName, TFactorNames
 
 
 class _CSignal:
@@ -73,23 +73,20 @@ class _CSignal:
 
 
 class CSignalFromFactorNeu(_CSignal):
-    def __init__(self, factor: TFactor, signal_save_dir: str, maw: int):
+    def __init__(self, factor: CFactor, factor_save_root_dir: str, signal_save_dir: str, maw: int):
         self.factor = factor
+        self.factor_save_root_dir = factor_save_root_dir
         self.maw = maw
-        signal_id = f"{factor[1]}_MA{maw:02d}"
+        signal_id = f"{factor.factor_name}_MA{maw:02d}"
         super().__init__(signal_save_dir=signal_save_dir, signal_id=signal_id)
 
     @property
     def factor_class(self) -> TFactorClass:
-        return self.factor[0]
+        return self.factor.factor_class
 
     @property
     def factor_name(self) -> TFactorName:
-        return self.factor[1]
-
-    @property
-    def factor_save_root_dir(self) -> TSaveDir:
-        return self.factor[2]
+        return self.factor.factor_name
 
     @staticmethod
     def map_factor_to_signal(data: pd.DataFrame) -> pd.DataFrame:
@@ -129,20 +126,24 @@ class CSignalFromFactorNeu(_CSignal):
 
 
 def process_for_signal_from_factor_neu(
-        factor: TFactor,
+        factor: CFactor,
+        factor_save_root_dir: str,
         maw: int,
         signal_save_dir: str,
         bgn_date: str,
         stp_date: str,
         calendar: CCalendar,
 ):
-    signal = CSignalFromFactorNeu(factor, signal_save_dir=signal_save_dir, maw=maw)
+    signal = CSignalFromFactorNeu(
+        factor, factor_save_root_dir=factor_save_root_dir, signal_save_dir=signal_save_dir, maw=maw,
+    )
     signal.main(bgn_date, stp_date, calendar)
     return 0
 
 
 def main_signals_from_factor_neu(
         factors: TFactors,
+        factor_save_root_dir: str,
         maws: list[int],
         signal_save_dir: str,
         bgn_date: str,
@@ -162,6 +163,7 @@ def main_signals_from_factor_neu(
                         process_for_signal_from_factor_neu,
                         kwds={
                             "factor": factor,
+                            "factor_save_root_dir": factor_save_root_dir,
                             "maw": maw,
                             "signal_save_dir": signal_save_dir,
                             "bgn_date": bgn_date,
@@ -177,10 +179,11 @@ def main_signals_from_factor_neu(
         for factor, maw in track(iter_args, description=desc):
             process_for_signal_from_factor_neu(
                 factor=factor,
+                factor_save_root_dir=factor_save_root_dir,
                 maw=maw,
                 signal_save_dir=signal_save_dir,
                 bgn_date=bgn_date,
                 stp_date=stp_date,
                 calendar=calendar,
             )
-        return 0
+    return 0

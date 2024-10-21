@@ -182,13 +182,13 @@ if __name__ == "__main__":
         print(f"{factor:>6s}: {cfg}")
 
     print(sep)
-    factors = cfg_factors.get_factors_raw(proj_cfg.factors_by_instru_dir)
+    factors = cfg_factors.get_factors_raw()
     print(f"Size of raw factors = {len(factors)}")
     for factor in factors:
         print(factor)
 
     print(sep)
     print(f"Size of neu factors = {len(factors)}")
-    factors = cfg_factors.get_factors_neu(proj_cfg.neutral_by_instru_dir)
+    factors = cfg_factors.get_factors_neu()
     for factor in factors:
         print(factor)

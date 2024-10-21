@@ -45,6 +45,6 @@ python main.py --bgn $bgn_date --stp $stp_date factor --fclass SMT
 python main.py --bgn $bgn_date --stp $stp_date factor --fclass RWTC
 python main.py --bgn $bgn_date --stp $stp_date factor --fclass TA
 
-#
+# single factor test
 python main.py --bgn $bgn_date_sig --stp $stp_date signals --type facNeu
 python main.py --bgn $bgn_date_sim --stp $stp_date simulations --type facNeu

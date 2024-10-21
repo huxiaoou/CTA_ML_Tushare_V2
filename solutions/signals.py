@@ -1,5 +1,6 @@
 import pandas as pd
 import multiprocessing as mp
+from itertools import product
 from rich.progress import Progress, track
 from husfort.qutility import check_and_makedirs, error_handler
 from husfort.qsqlite import CMgrSqlDb
@@ -37,23 +38,46 @@ class _CSignal:
         data = sqldb.read_by_range(bgn_date, stp_date)
         return data
 
-    def load_input(self, bgn_date: str, stp_date: str) -> pd.DataFrame:
+    def load_input(self, bgn_date: str, stp_date: str, calendar: CCalendar) -> pd.DataFrame:
         raise NotImplementedError
 
-    def core(self, input_data: pd.DataFrame) -> pd.DataFrame:
+    def core(self, input_data: pd.DataFrame, bgn_date: str, stp_date: str, calendar: CCalendar) -> pd.DataFrame:
         raise NotImplementedError
 
     def main(self, bgn_date: str, stp_date: str, calendar: CCalendar):
-        input_data = self.load_input(bgn_date, stp_date)
-        new_data = self.core(input_data)
+        input_data = self.load_input(bgn_date, stp_date, calendar)
+        new_data = self.core(input_data, bgn_date, stp_date, calendar)
         self.save(new_data=new_data, calendar=calendar)
         return 0
 
+    @staticmethod
+    def moving_average_signal(signal_data: pd.DataFrame, bgn_date: str, maw: int) -> pd.DataFrame:
+        """
+
+        :param signal_data: pd.Dataframe with columns = ["trade_date", "instrument", "weight"]
+        :param bgn_date:
+        :param maw:
+        :return:
+        """
+        pivot_data = pd.pivot_table(
+            data=signal_data,
+            index=["trade_date"],
+            columns=["instrument"],
+            values=["weight"],
+        )
+        instru_ma_data = pivot_data.fillna(0).rolling(window=maw).mean()
+        truncated_data = instru_ma_data.query(f"trade_date >= '{bgn_date}'")
+        normalize_data = truncated_data.div(truncated_data.abs().sum(axis=1), axis=0).fillna(0)
+        stack_data = normalize_data.stack(future_stack=True).reset_index()
+        return stack_data[["trade_date", "instrument", "weight"]]
+
 
 class CSignalFromFactorNeu(_CSignal):
-    def __init__(self, factor: TFactor, **kwargs):
+    def __init__(self, factor: TFactor, signal_save_dir: str, maw: int):
         self.factor = factor
-        super().__init__(**kwargs)
+        self.maw = maw
+        signal_id = f"{factor[1]}_MA{maw:02d}"
+        super().__init__(signal_save_dir=signal_save_dir, signal_id=signal_id)
 
     @property
     def factor_class(self) -> TFactorClass:
@@ -67,7 +91,16 @@ class CSignalFromFactorNeu(_CSignal):
     def factor_save_root_dir(self) -> TSaveDir:
         return self.factor[2]
 
-    def load_input(self, bgn_date: str, stp_date: str) -> pd.DataFrame:
+    @staticmethod
+    def map_factor_to_signal(data: pd.DataFrame) -> pd.DataFrame:
+        n = len(data)
+        data["weight"] = [1] * int(n / 2) + [0] * (n % 2) + [-1] * int(n / 2)
+        if (abs_sum := data["weight"].abs().sum()) > 0:
+            data["weight"] = data["weight"] / abs_sum
+        return data[["trade_date", "instrument", "weight"]]
+
+    def load_input(self, bgn_date: str, stp_date: str, calendar: CCalendar) -> pd.DataFrame:
+        base_bgn_date = calendar.get_next_date(bgn_date, -self.maw + 1)
         db_struct_fac = gen_fac_neu_db(
             db_save_root_dir=self.factor_save_root_dir,
             factor_class=self.factor_class,
@@ -80,42 +113,37 @@ class CSignalFromFactorNeu(_CSignal):
             mode="r",
         )
         data = sqldb.read_by_range(
-            bgn_date, stp_date, value_columns=["trade_date", "instrument", self.factor_name]
+            bgn_date=base_bgn_date, stp_date=stp_date,
+            value_columns=["trade_date", "instrument", self.factor_name],
         )
         return data
 
-    @staticmethod
-    def map_factor_to_signal(data: pd.DataFrame) -> pd.DataFrame:
-        n = len(data)
-        s = [1] * int(n / 2) + [0] * (n % 2) + [-1] * int(n / 2)
-        data["weight"] = s
-        if (abs_sum := data["weight"].abs().sum()) > 0:
-            data["weight"] = data["weight"] / abs_sum
-        return data[["trade_date", "instrument", "weight"]]
-
-    def core(self, input_data: pd.DataFrame) -> pd.DataFrame:
+    def core(self, input_data: pd.DataFrame, bgn_date: str, stp_date: str, calendar: CCalendar) -> pd.DataFrame:
         sorted_data = input_data.sort_values(
             by=["trade_date", self.factor_name, "instrument"], ascending=[True, False, True]
         )
         grouped_data = sorted_data.groupby(by=["trade_date"], group_keys=False)
         signal_data = grouped_data.apply(self.map_factor_to_signal)
-        return signal_data
+        signal_data_ma = self.moving_average_signal(signal_data, bgn_date=bgn_date, maw=self.maw)
+        return signal_data_ma
 
 
 def process_for_signal_from_factor_neu(
         factor: TFactor,
+        maw: int,
         signal_save_dir: str,
         bgn_date: str,
         stp_date: str,
         calendar: CCalendar,
 ):
-    signal = CSignalFromFactorNeu(factor, signal_save_dir=signal_save_dir, signal_id=factor[1])
+    signal = CSignalFromFactorNeu(factor, signal_save_dir=signal_save_dir, maw=maw)
     signal.main(bgn_date, stp_date, calendar)
     return 0
 
 
 def main_signals_from_factor_neu(
         factors: TFactors,
+        maws: list[int],
         signal_save_dir: str,
         bgn_date: str,
         stp_date: str,
@@ -124,15 +152,17 @@ def main_signals_from_factor_neu(
         processes: int,
 ):
     desc = "Translating neutralized factors to signals"
+    iter_args = product(factors, maws)
     if call_multiprocess:
         with Progress() as pb:
             main_task = pb.add_task(description=desc, total=len(factors))
             with mp.get_context("spawn").Pool(processes) as pool:
-                for factor in factors:
+                for factor, maw in iter_args:
                     pool.apply_async(
                         process_for_signal_from_factor_neu,
                         kwds={
                             "factor": factor,
+                            "maw": maw,
                             "signal_save_dir": signal_save_dir,
                             "bgn_date": bgn_date,
                             "stp_date": stp_date,
@@ -144,9 +174,10 @@ def main_signals_from_factor_neu(
                 pool.close()
                 pool.join()
     else:
-        for factor in track(factors, description=desc):
+        for factor, maw in track(iter_args, description=desc):
             process_for_signal_from_factor_neu(
                 factor=factor,
+                maw=maw,
                 signal_save_dir=signal_save_dir,
                 bgn_date=bgn_date,
                 stp_date=stp_date,

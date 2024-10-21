@@ -407,6 +407,7 @@ if __name__ == "__main__":
             factors_neu = cfg_factors.get_factors_neu(proj_cfg.neutral_by_instru_dir)
             main_signals_from_factor_neu(
                 factors=factors_neu,
+                maws=proj_cfg.prd.wins,
                 signal_save_dir=proj_cfg.signals_frm_fac_neu_dir,
                 bgn_date=bgn_date,
                 stp_date=stp_date,

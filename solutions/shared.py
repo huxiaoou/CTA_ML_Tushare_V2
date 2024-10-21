@@ -79,7 +79,7 @@ def neutralize_by_date(
 # ------ sqlite3 database structure ------
 # ----------------------------------------
 
-def gen_tst_ret_raw_db(instru: str, db_save_root_dir: str, save_id: str, rets: list[str]) -> CDbStruct:
+def gen_tst_ret_fac_raw_db(instru: str, db_save_root_dir: str, save_id: str, rets: list[str]) -> CDbStruct:
     return CDbStruct(
         db_save_dir=os.path.join(db_save_root_dir, save_id),
         db_name=f"{instru}.db",
@@ -87,6 +87,26 @@ def gen_tst_ret_raw_db(instru: str, db_save_root_dir: str, save_id: str, rets: l
             name="test_return",
             primary_keys=[CSqlVar("trade_date", "TEXT")],
             value_columns=[CSqlVar("ticker", "TEXT")] + [CSqlVar(ret, "REAL") for ret in rets],
+        )
+    )
+
+
+def gen_tst_ret_raw_db(db_save_root_dir: str, save_id: str, rets: list[str]) -> CDbStruct:
+    """
+
+    :param db_save_root_dir:
+    :param save_id: like "001L1RAW"
+    :param rets: like ["Cls010L1RAW", "Opn010L1RAW"]
+    :return:
+    """
+
+    return CDbStruct(
+        db_save_dir=db_save_root_dir,
+        db_name=f"{save_id}.db",
+        table=CSqlTable(
+            name="test_return",
+            primary_keys=[CSqlVar("trade_date", "TEXT"), CSqlVar("instrument", "TEXT")],
+            value_columns=[CSqlVar(ret, "REAL") for ret in rets],
         )
     )
 
@@ -101,7 +121,7 @@ def gen_tst_ret_neu_db(db_save_root_dir: str, save_id: str, rets: list[str]) -> 
     """
 
     return CDbStruct(
-        db_save_dir=os.path.join(db_save_root_dir, save_id),
+        db_save_dir=db_save_root_dir,
         db_name=f"{save_id}.db",
         table=CSqlTable(
             name="test_return",

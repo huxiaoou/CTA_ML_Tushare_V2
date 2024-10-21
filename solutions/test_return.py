@@ -4,7 +4,7 @@ from loguru import logger
 from husfort.qutility import SFG, check_and_makedirs
 from husfort.qcalendar import CCalendar
 from husfort.qsqlite import CDbStruct, CMgrSqlDb
-from solutions.shared import gen_tst_ret_raw_db, gen_tst_ret_neu_db, neutralize_by_date
+from solutions.shared import gen_tst_ret_fac_raw_db, gen_tst_ret_raw_db, gen_tst_ret_neu_db, neutralize_by_date
 from typedef import TUniverse
 
 
@@ -78,7 +78,7 @@ class CTstRetRaw(_CTstRet):
         base_bgn_date = self.get_base_date(iter_dates[0], calendar)
         base_end_date = self.get_base_date(iter_dates[-1], calendar)
 
-        db_struct_instru = gen_tst_ret_raw_db(
+        db_struct_instru = gen_tst_ret_fac_raw_db(
             instru=instru,
             db_save_root_dir=self.db_tst_ret_save_dir,
             save_id=self.save_id,
@@ -136,7 +136,7 @@ class CTstRetNeu(_CTstRet):
         return self.ret_lbl_opn.replace("NEU", "RAW")
 
     def load_ref_ret_by_instru(self, instru: str, bgn_date: str, stp_date: str) -> pd.DataFrame:
-        db_struct_ref = gen_tst_ret_raw_db(
+        db_struct_ref = gen_tst_ret_fac_raw_db(
             instru=instru,
             db_save_root_dir=self.db_tst_ret_save_dir,
             save_id=self.ref_id,
@@ -173,12 +173,21 @@ class CTstRetNeu(_CTstRet):
         avlb_data = avlb_data[["trade_date", "instrument", "sectorL1"]]
         return avlb_data
 
-    def save(self, tst_ret_neu_data: pd.DataFrame, base_bgn_date: str, calendar):
-        db_struct_instru = gen_tst_ret_neu_db(
-            db_save_root_dir=self.db_tst_ret_save_dir,
-            save_id=self.save_id,
-            rets=self.rets,
-        )
+    def save(self, new_data: pd.DataFrame, calendar: CCalendar, data_type: str):
+        if data_type == "raw":
+            db_struct_instru = gen_tst_ret_raw_db(
+                db_save_root_dir=self.db_tst_ret_save_dir,
+                save_id=self.ref_id,
+                rets=self.ref_rets,
+            )
+        elif data_type == "neu":
+            db_struct_instru = gen_tst_ret_neu_db(
+                db_save_root_dir=self.db_tst_ret_save_dir,
+                save_id=self.save_id,
+                rets=self.rets,
+            )
+        else:
+            raise ValueError(f"data_type = {data_type} is illegal")
         check_and_makedirs(db_struct_instru.db_save_dir)
         sqldb = CMgrSqlDb(
             db_save_dir=db_struct_instru.db_save_dir,
@@ -186,8 +195,8 @@ class CTstRetNeu(_CTstRet):
             table=db_struct_instru.table,
             mode="a",
         )
-        if sqldb.check_continuity(base_bgn_date, calendar) == 0:
-            instru_tst_ret_neu_data = tst_ret_neu_data[db_struct_instru.table.vars.names]
+        if sqldb.check_continuity(new_data["trade_date"].iloc[0], calendar) == 0:
+            instru_tst_ret_neu_data = new_data[db_struct_instru.table.vars.names]
             sqldb.update(update_data=instru_tst_ret_neu_data)
         return 0
 
@@ -199,6 +208,8 @@ class CTstRetNeu(_CTstRet):
         base_stp_date = calendar.get_next_date(base_end_date, shift=1)
 
         ref_tst_ret_data = self.load_ref_ret(base_bgn_date, base_stp_date)
+        self.save(ref_tst_ret_data, calendar, data_type="raw")
+
         available_data = self.load_available(base_bgn_date, base_stp_date)
         net_ref_tst_ret_data = pd.merge(
             left=available_data,
@@ -211,5 +222,5 @@ class CTstRetNeu(_CTstRet):
             date_name="trade_date", sec_name="sectorL1", instru_name="instrument",
         )
         tst_ret_neu_data = tst_ret_neu_data.query(f"trade_date >= '{base_bgn_date}' & trade_date <= '{base_stp_date}'")
-        self.save(tst_ret_neu_data, base_bgn_date, calendar)
+        self.save(tst_ret_neu_data, calendar, data_type="neu")
         return 0

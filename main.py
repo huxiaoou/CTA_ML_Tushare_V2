@@ -430,8 +430,8 @@ if __name__ == "__main__":
             )
         elif args.type == "mdlPrd":
             from solutions.mclrn_mdl_parser import load_config_models
-            from solutions.signals import main_signals_from_mdl_prd
             from solutions.shared import gen_model_tests
+            from solutions.signals import main_signals_from_mdl_prd
 
             factor_groups = cfg_factors.get_factor_groups(proj_cfg.factor_groups, "NEU")
             config_models = load_config_models(cfg_mdl_dir=proj_cfg.mclrn_dir, cfg_mdl_file=proj_cfg.mclrn_cfg_file)
@@ -447,13 +447,13 @@ if __name__ == "__main__":
                 call_multiprocess=not args.nomp,
                 processes=args.processes,
             )
-
         else:
             raise ValueError(f"args.type == {args.type} is illegal")
     elif args.switch == "simulations":
+        from solutions.simulations import main_simulations
+
         if args.type == "facNeu":
             from solutions.shared import get_sim_args_fac_neu
-            from solutions.simulations import main_simulations
 
             sim_args_list = get_sim_args_fac_neu(
                 factors=cfg_factors.get_factors_neu(),
@@ -466,6 +466,29 @@ if __name__ == "__main__":
             main_simulations(
                 sim_args_list=sim_args_list,
                 sim_save_dir=proj_cfg.sim_frm_fac_neu_dir,
+                bgn_date=bgn_date,
+                stp_date=stp_date,
+                calendar=calendar,
+                call_multiprocess=not args.nomp,
+                processes=args.processes,
+            )
+        elif args.type == "mdlPrd":
+            from solutions.mclrn_mdl_parser import load_config_models
+            from solutions.shared import gen_model_tests, get_sim_args_mdl_prd
+
+            factor_groups = cfg_factors.get_factor_groups(proj_cfg.factor_groups, "NEU")
+            config_models = load_config_models(cfg_mdl_dir=proj_cfg.mclrn_dir, cfg_mdl_file=proj_cfg.mclrn_cfg_file)
+            test_mdls = gen_model_tests(config_models=config_models, factor_groups=factor_groups)
+
+            sim_args_list = get_sim_args_mdl_prd(
+                tests=test_mdls,
+                signals_dir=proj_cfg.sig_frm_mdl_prd_dir,
+                ret_dir=proj_cfg.test_return_dir,
+                cost=proj_cfg.const.COST,
+            )
+            main_simulations(
+                sim_args_list=sim_args_list,
+                sim_save_dir=proj_cfg.sim_frm_mdl_prd_dir,
                 bgn_date=bgn_date,
                 stp_date=stp_date,
                 calendar=calendar,
@@ -530,8 +553,8 @@ if __name__ == "__main__":
             )
         elif args.type == "trnprd":
             from solutions.mclrn_mdl_parser import load_config_models
-            from solutions.mclrn_mdl_trn_prd import main_train_and_predict
             from solutions.shared import gen_model_tests
+            from solutions.mclrn_mdl_trn_prd import main_train_and_predict
 
             config_models = load_config_models(cfg_mdl_dir=proj_cfg.mclrn_dir, cfg_mdl_file=proj_cfg.mclrn_cfg_file)
             test_mdls = gen_model_tests(config_models=config_models, factor_groups=factor_groups)

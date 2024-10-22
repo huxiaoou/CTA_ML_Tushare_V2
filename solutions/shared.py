@@ -230,9 +230,7 @@ def get_sim_args_fac_neu(
 
 
 def get_sim_args_fac_neu_by_class(
-        factors: TFactors, maws: list[int], rets: TRets,
-        signals_dir: str, ret_dir: str,
-        cost: float
+        factors: TFactors, maws: list[int], rets: TRets, signals_dir: str, ret_dir: str, cost: float
 ) -> dict[TSimGrpId, list[CSimArgs]]:
     res: dict[TSimGrpId, list[CSimArgs]] = {}
     for factor, maw, ret in ittl.product(factors, maws, rets):
@@ -250,6 +248,23 @@ def get_sim_args_fac_neu_by_class(
             cost=cost,
         )
         res[key].append(sim_args)
+    return res
+
+
+def get_sim_args_mdl_prd(tests: list[CTestMdl], signals_dir: str, ret_dir: str, cost: float) -> list[CSimArgs]:
+    res: list[CSimArgs] = []
+    for test in tests:
+        signal_id = f"{test.save_tag_mdl}.MA{test.ret.win:02d}"
+        ret = CRet(ret_type="RAW", ret_prc=test.ret.ret_prc, win=1, lag=test.ret.lag)
+        ret_names = [ret.ret_name]
+        sim_args = CSimArgs(
+            sim_id=f"{signal_id}.{ret.ret_name}",
+            tgt_ret=ret,
+            db_struct_sig=gen_sig_db(db_save_dir=signals_dir, signal_id=signal_id),
+            db_struct_ret=gen_tst_ret_raw_db(db_save_root_dir=ret_dir, save_id=ret.save_id, rets=ret_names),
+            cost=cost,
+        )
+        res.append(sim_args)
     return res
 
 

@@ -20,6 +20,10 @@ path:
   sig_frm_fac_neu_dir: sig_frm_fac_neu
   sim_frm_fac_neu_dir: sim_frm_fac_neu
   evl_frm_fac_neu_dir: evl_frm_fac_neu
+  mclrn_dir: mclrn
+  mclrn_cfg_file: config_models.yaml
+  mclrn_mdl_dir: models
+  mclrn_prd_dir: predictions
 
 mkt_idxes:
   COM: NH0100.NHF
@@ -303,6 +307,40 @@ factors:
     obv: 10
     natr: 10
 
+factor_groups:
+  MTM: [ MTM ]
+  SKEW: [ SKEW ]
+  STOCK: [ RS ]
+  BASIS: [ BASIS ]
+  TS: [ TS ]
+  BETA: [ S0BETA, S1BETA, CBETA, IBETA,PBETA ]
+  TURNOVER: [ CTP, CVP, CSP ]
+  POSITION: [ NOI,NDOI ]
+  HFT: [ AMP, EXR, SMT, RWTC ]
+  TA: [ TA ]
+
+# ------- models -------
+cv: 5
+mclrn:
+  Ridge:
+    alpha: [ 1.0, 10.0, 100.0 ] # [1.0, 10.0, 100.0, 200.0, 500.0]
+#  LGBM:
+#    boosting_type: [ "gbdt" ]
+#    n_estimators: [ 5, 10, 20 ] # [50, 100, 200]
+#    max_depth: [ -1 ]
+#    num_leaves: [ 2, 4, 8 ]
+#    learning_rate: [ 0.1 ] # [0.01, 0.1, 1.0]
+#    min_child_samples: [ 15 ] # min_data_in_leaf
+#    max_bin: [ 15 ]
+#    metric: [ "l2" ]
+#  XGB:
+#    booster: [ "dart" ] # ["gbtree", "gblinear", "dart"]
+#    n_estimators: [ 5, 10, 20 ]
+#    max_depth: [ 2 ]
+#    max_leaves: [ 4 ]
+#    learning_rate: [ 0.01, 0.1, 0.5 ]
+#    objective: [ "reg:squarederror" ]
+#    grow_policy: [ "lossguide" ] # ["depthwise", "lossguide"]
 
 # ------- const -------
 CONST:

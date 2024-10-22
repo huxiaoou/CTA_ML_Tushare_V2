@@ -4,7 +4,8 @@ import scipy.stats as sps
 import itertools as ittl
 from rich.progress import Progress
 from husfort.qsqlite import CDbStruct, CSqlTable, CSqlVar
-from typedef import TFactorClass, TFactorNames, TFactors, CSimArgs, TRets, TSimGrpId
+from typedef import TFactorClass, TFactorNames, TFactors, CSimArgs, TRets, TSimGrpId, TUniqueId
+from typedef import CTestMdl, CRet, CModel, TFactorGroups
 
 
 def convert_mkt_idx(mkt_idx: str, prefix: str = "I") -> str:
@@ -192,6 +193,18 @@ def gen_nav_db(db_save_dir: str, save_id: str) -> CDbStruct:
     )
 
 
+def gen_prdct_db(db_save_root_dir: str, test: CTestMdl) -> CDbStruct:
+    return CDbStruct(
+        db_save_dir=db_save_root_dir,
+        db_name=f"{test.save_tag_mdl}.db",
+        table=CSqlTable(
+            name="prediction",
+            primary_keys=[CSqlVar("trade_date", "TEXT"), CSqlVar("instrument", "TEXT")],
+            value_columns=[CSqlVar(test.ret.ret_name, "REAL")],
+        )
+    )
+
+
 # -----------------------------------------
 # ------ arguments about simulations ------
 # -----------------------------------------
@@ -238,3 +251,18 @@ def get_sim_args_fac_neu_by_class(
         )
         res[key].append(sim_args)
     return res
+
+
+# -----------------------------------------
+# ------ arguments about simulations ------
+# -----------------------------------------
+
+def gen_model_tests(config_models: dict[str, dict], factor_groups: TFactorGroups) -> list[CTestMdl]:
+    tests: list[CTestMdl] = []
+    for unique_id, m in config_models.items():
+        ret = CRet.parse_from_name(m["ret_name"])
+        model = CModel(model_type=m["model_type"], model_args=m["model_args"])
+        fac_grp = factor_groups[m["fac_grp"]]
+        test = CTestMdl(unique_Id=TUniqueId(unique_id), ret=ret, fac_grp=fac_grp, trn_win=m["trn_win"], model=model)
+        tests.append(test)
+    return tests

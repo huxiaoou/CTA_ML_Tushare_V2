@@ -66,6 +66,16 @@ proj_cfg = CCfgProj(
         _config["path"]["project_root_dir"], _config["path"]["sim_frm_fac_neu_dir"]),
     evl_frm_fac_neu_dir=os.path.join(  # type:ignore
         _config["path"]["project_root_dir"], _config["path"]["evl_frm_fac_neu_dir"]),
+    mclrn_dir=os.path.join(  # type:ignore
+        _config["path"]["project_root_dir"], _config["path"]["mclrn_dir"],
+    ),
+    mclrn_cfg_file=_config["path"]["mclrn_cfg_file"],
+    mclrn_mdl_dir=os.path.join(  # type:ignore
+        _config["path"]["project_root_dir"], _config["path"]["mclrn_dir"], _config["path"]["mclrn_mdl_dir"],
+    ),
+    mclrn_prd_dir=os.path.join(  # type:ignore
+        _config["path"]["project_root_dir"], _config["path"]["mclrn_dir"], _config["path"]["mclrn_prd_dir"],
+    ),
 
     universe=universe,
     avlb_unvrs=CCfgAvlbUnvrs(**_config["available"]),
@@ -76,6 +86,9 @@ proj_cfg = CCfgProj(
     prd=CCfgPrd(**_config["prd"]),
     sim=CCfgSim(**_config["sim"]),
     factors=_config["factors"],
+    factor_groups=_config["factor_groups"],
+    cv=_config["cv"],
+    mclrn=_config["mclrn"],
 )
 
 # ---------- databases structure ----------

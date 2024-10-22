@@ -39,6 +39,14 @@ class CRet:
     def save_id(self) -> str:
         return f"{self.win:03d}L{self.lag:d}{self.ret_type}"
 
+    @staticmethod
+    def parse_from_name(return_name: str) -> "CRet":
+        ret_type = return_name[-3:]
+        ret_prc = return_name[0:3]
+        win = int(return_name[3:6])
+        lag = int(return_name[7])
+        return CRet(ret_type=ret_type, ret_prc=ret_prc, win=win, lag=lag)  # type:ignore
+
 
 TRets = list[CRet]
 
@@ -564,6 +572,29 @@ class CCfgFactorTA(CCfgFactor):
         return TFactorNames(names_ta)
 
 
+TGroupId = str
+
+
+@dataclass(frozen=True)
+class CFactorGroup:
+    group_id: TGroupId
+    members: TFactors
+
+    def groupby_class(self) -> dict[TFactorClass, TFactorNames]:
+        res: dict[TFactorClass, TFactorNames] = {}
+        for factor in self.members:
+            if factor.factor_class not in res:
+                res[factor.factor_class] = []
+            res[factor.factor_class].append(factor.factor_name)
+        return res
+
+    def names(self) -> TFactorNames:
+        return [factor.factor_name for factor in self.members]
+
+
+TFactorGroups = dict[TGroupId, CFactorGroup]
+
+
 @dataclass(frozen=True)
 class CCfgFactors:
     MTM: CCfgFactorMTM | None
@@ -615,6 +646,34 @@ class CCfgFactors:
                 res.extend(factors)
         return res
 
+    def get_factors_from_factor_class(self, factor_class: TFactorClass, factor_type: Literal["RAW", "NEU"]) -> TFactors:
+        cfg_fac = vars(self)[factor_class]
+        if factor_type == "RAW":
+            sub_grp = [CFactor(cfg_fac.factor_class, factor_name) for factor_name in cfg_fac.factor_names]
+        elif factor_type == "NEU":
+            sub_grp = [CFactor(cfg_fac.factor_class, factor_name) for factor_name in cfg_fac.factor_names_neu]
+        else:
+            raise ValueError(f"factor_type = {factor_type} is illegal")
+        return sub_grp
+
+    def get_factor_group(
+            self, group_id: str, factor_classes: list[TFactorClass], factor_type: Literal["RAW", "NEU"],
+    ) -> CFactorGroup:
+        members: TFactors = []
+        for factor_class in factor_classes:
+            cls_mbrs = self.get_factors_from_factor_class(factor_class, factor_type)
+            members.extend(cls_mbrs)
+        return CFactorGroup(group_id, members)
+
+    def get_factor_groups(
+            self, factor_groups: dict[str, list[TFactorClass]], factor_type: Literal["RAW", "NEU"],
+    ) -> TFactorGroups:
+        res: TFactorGroups = {}
+        for group_id, factor_classes in factor_groups.items():
+            factor_group = self.get_factor_group(group_id, factor_classes, factor_type)
+            res[group_id] = factor_group
+        return res
+
 
 """
 --------------------------------------
@@ -652,7 +711,50 @@ TSimGrpId = tuple[TFactorClass, TRetPrc, int]
 
 """
 --------------------------------
-Part V: generic and project
+Part V: models
+--------------------------------
+"""
+
+
+@dataclass(frozen=True)
+class CModel:
+    model_type: Literal["Ridge", "LGBM", "XGB"]
+    model_args: dict
+
+    @property
+    def desc(self) -> str:
+        return f"{self.model_type}"
+
+
+TUniqueId = NewType("TUniqueId", str)
+
+
+@dataclass(frozen=True)
+class CTestMdl:
+    unique_Id: TUniqueId
+    ret: CRet
+    fac_grp: CFactorGroup
+    trn_win: int
+    model: CModel
+
+    @property
+    def layers(self) -> list[str]:
+        return [
+            self.unique_Id,  # M0005
+            self.ret.ret_name,  # ClsRtn001L1Neu
+            self.fac_grp.group_id,  # MTM, BASIS, etc
+            f"W{self.trn_win:03d}",  # W060
+            self.model.desc,  # Ridge
+        ]
+
+    @property
+    def save_tag_mdl(self) -> str:
+        return ".".join(self.layers)
+
+
+"""
+--------------------------------
+Part VI: generic and project
 --------------------------------
 """
 
@@ -707,6 +809,10 @@ class CCfgProj:
     sig_frm_fac_neu_dir: str
     sim_frm_fac_neu_dir: str
     evl_frm_fac_neu_dir: str
+    mclrn_dir: str
+    mclrn_cfg_file: str
+    mclrn_mdl_dir: str
+    mclrn_prd_dir: str
 
     # --- project parameters
     universe: TUniverse
@@ -717,16 +823,28 @@ class CCfgProj:
     prd: CCfgPrd
     sim: CCfgSim
     factors: dict
+    factor_groups: dict[str, list[TFactorClass]]
+    cv: int
+    mclrn: dict[str, dict]
 
     @property
     def test_rets_wins(self) -> list[int]:
         return self.prd.wins + self.sim.wins
 
     def get_raw_test_rets(self) -> TRets:
-        res: list[CRet] = []
+        res: TRets = []
         for win in self.sim.wins:
             ret_opn = CRet(ret_type="RAW", ret_prc="Opn", win=win, lag=self.const.LAG)
             ret_cls = CRet(ret_type="RAW", ret_prc="Cls", win=win, lag=self.const.LAG)
+            res.append(ret_opn)
+            res.append(ret_cls)
+        return res
+
+    def get_neu_test_rets_prd(self) -> TRets:
+        res: TRets = []
+        for win in self.prd.wins:
+            ret_opn = CRet(ret_type="NEU", ret_prc="Opn", win=win, lag=self.const.LAG)
+            ret_cls = CRet(ret_type="NEU", ret_prc="Cls", win=win, lag=self.const.LAG)
             res.append(ret_opn)
             res.append(ret_cls)
         return res

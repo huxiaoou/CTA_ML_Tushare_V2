@@ -45,7 +45,11 @@ python main.py --bgn $bgn_date --stp $stp_date factor --fclass SMT
 python main.py --bgn $bgn_date --stp $stp_date factor --fclass RWTC
 python main.py --bgn $bgn_date --stp $stp_date factor --fclass TA
 
-# single factor test
+# --- single factor test
 python main.py --bgn $bgn_date_sig --stp $stp_date signals --type facNeu
 python main.py --bgn $bgn_date_sim --stp $stp_date simulations --type facNeu
 python main.py --bgn $bgn_date_sim --stp $stp_date evaluations --type facNeu
+
+# --- machine learning
+python main.py --bgn $bgn_date_ml --stp $stp_date mclrn --type parse
+python main.py --bgn $bgn_date_ml --stp $stp_date --processes 12 mclrn --type trnprd

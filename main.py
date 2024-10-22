@@ -54,6 +54,10 @@ def parse_args():
     arg_parser_sub = arg_parser_subs.add_parser(name="evaluations", help="evaluate simulations")
     arg_parser_sub.add_argument("--type", type=str, choices=("facNeu",))
 
+    # switch: mclrn
+    arg_parser_sub = arg_parser_subs.add_parser(name="mclrn", help="machine learning functions")
+    arg_parser_sub.add_argument("--type", type=str, choices=("parse", "trnprd"))
+
     return arg_parser.parse_args()
 
 
@@ -489,8 +493,44 @@ if __name__ == "__main__":
                 bgn_date=bgn_date,
                 stp_date=stp_date,
             )
+        else:
+            raise ValueError(f"args.type == {args.type} is illegal")
+    elif args.switch == "mclrn":
+        factor_groups = cfg_factors.get_factor_groups(proj_cfg.factor_groups, "NEU")
+        if args.type == "parse":
+            from solutions.mclrn_mdl_parser import parse_model_configs
 
+            parse_model_configs(
+                models=proj_cfg.mclrn,
+                rets=proj_cfg.get_neu_test_rets_prd(),
+                factor_groups=factor_groups,
+                trn_wins=proj_cfg.trn.wins,
+                cfg_mdl_dir=proj_cfg.mclrn_dir,
+                cfg_mdl_file=proj_cfg.mclrn_cfg_file,
+            )
+        elif args.type == "trnprd":
+            from solutions.mclrn_mdl_parser import load_config_models
+            from solutions.mclrn_mdl_trn_prd import main_train_and_predict
+            from solutions.shared import gen_model_tests
 
+            config_models = load_config_models(cfg_mdl_dir=proj_cfg.mclrn_dir, cfg_mdl_file=proj_cfg.mclrn_cfg_file)
+            test_mdls = gen_model_tests(config_models=config_models, factor_groups=factor_groups)
+            main_train_and_predict(
+                tests=test_mdls,
+                cv=proj_cfg.cv,
+                factors_save_root_dir=proj_cfg.neutral_by_instru_dir,
+                tst_ret_save_root_dir=proj_cfg.test_return_dir,
+                db_struct_avlb=db_struct_cfg.available,
+                mclrn_mdl_dir=proj_cfg.mclrn_mdl_dir,
+                mclrn_prd_dir=proj_cfg.mclrn_prd_dir,
+                universe=proj_cfg.universe,
+                bgn_date=bgn_date,
+                stp_date=stp_date,
+                calendar=calendar,
+                call_multiprocess=not args.nomp,
+                processes=args.processes,
+                verbose=args.verbose,
+            )
         else:
             raise ValueError(f"args.type == {args.type} is illegal")
     else:

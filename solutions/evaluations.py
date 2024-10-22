@@ -50,12 +50,21 @@ class CEvl:
         return res
 
 
-class CEvlFacNeu(CEvl):
-    def __init__(self, sim_args: CSimArgs, sim_frm_fac_neu_dir: str):
+class CEvlFromSim(CEvl):
+    def __init__(self, sim_args: CSimArgs, db_save_dir: str):
         self.sim_args = sim_args
-        db_struct_nav = gen_nav_db(db_save_dir=sim_frm_fac_neu_dir, save_id=sim_args.sim_id)
+        db_struct_nav = gen_nav_db(db_save_dir=db_save_dir, save_id=sim_args.sim_id)
         super().__init__(db_struct_nav)
 
+
+"""
+-------------------------------------------
+--- evaluations for neutralized factors ---
+-------------------------------------------
+"""
+
+
+class CEvlFacNeu(CEvlFromSim):
     def add_arguments(self, res: dict):
         factor_name, maw, ret_name = self.sim_args.sim_id.split(".")
         other_arguments = {
@@ -161,4 +170,82 @@ def main_plt_fac_neu(
             bgn_date=bgn_date,
             stp_date=stp_date,
         )
+    return 0
+
+
+"""
+-----------------------------------------------
+--- evaluations for machine learning models ---
+-----------------------------------------------
+"""
+
+
+class CEvlMdlPrd(CEvlFromSim):
+    def add_arguments(self, res: dict):
+        unique_id, prd_ret, factor_class, trn_win, model, maw, tgt_ret = self.sim_args.sim_id.split(".")
+        other_arguments = {
+            "unique_id": unique_id,
+            "prd_ret": prd_ret,
+            "factor_class": factor_class,
+            "trn_win": trn_win,
+            "model": model,
+            "maw": maw,
+            "tgt_ret": tgt_ret,
+        }
+        res.update(other_arguments)
+        return 0
+
+
+def process_for_evl_mdl_prd(sim_args: CSimArgs, sim_frm_mdl_prd_dir: str, bgn_date: str, stp_date: str) -> dict:
+    s = CEvlMdlPrd(sim_args, sim_frm_mdl_prd_dir)
+    return s.main(bgn_date, stp_date)
+
+
+def main_evl_mdl_prd(
+        sim_args_list: list[CSimArgs],
+        sim_frm_mdl_prd_dir: str,
+        evl_frm_mdl_prd_dir: str,
+        bgn_date: str,
+        stp_date: str,
+        call_multiprocess: bool,
+        processes: int,
+):
+    desc = "Calculating evaluations for machine learning models"
+    evl_sims: list[dict] = []
+    if call_multiprocess:
+        with Progress() as pb:
+            main_task = pb.add_task(description=desc, total=len(sim_args_list))
+            with mp.get_context("spawn").Pool(processes=processes) as pool:
+                jobs = []
+                for sim_args in sim_args_list:
+                    job = pool.apply_async(
+                        process_for_evl_mdl_prd,
+                        args=(sim_args, sim_frm_mdl_prd_dir, bgn_date, stp_date),
+                        callback=lambda _: pb.update(main_task, advance=1),
+                        error_callback=error_handler,
+                    )
+                    jobs.append(job)
+                pool.close()
+                pool.join()
+            evl_sims = [job.get() for job in jobs]
+    else:
+        for sim_args in track(sim_args_list, description=desc):
+            evl = process_for_evl_mdl_prd(sim_args, sim_frm_mdl_prd_dir, bgn_date, stp_date)
+            evl_sims.append(evl)
+
+    evl_data = pd.DataFrame(evl_sims)
+    evl_data["sharpe+calmar"] = evl_data["sharpe"] + evl_data["calmar"]
+    evl_data = evl_data.sort_values(by=["sharpe+calmar"], ascending=False)
+    evl_data.insert(loc=0, column="calmar", value=evl_data.pop("calmar"))
+    evl_data.insert(loc=0, column="sharpe", value=evl_data.pop("sharpe"))
+    evl_data.insert(loc=0, column="sharpe+calmar", value=evl_data.pop("sharpe+calmar"))
+
+    pd.set_option("display.max_rows", 40)
+    pd.set_option("display.float_format", lambda z: f"{z:.3f}")
+    print(evl_data)
+
+    check_and_makedirs(evl_frm_mdl_prd_dir)
+    evl_file = "evaluations_for_mdl_prd.csv.gz"
+    evl_path = os.path.join(evl_frm_mdl_prd_dir, evl_file)
+    evl_data.to_csv(evl_path, float_format="%.6f", index=False)
     return 0

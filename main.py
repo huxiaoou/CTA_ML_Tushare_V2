@@ -479,7 +479,6 @@ if __name__ == "__main__":
             factor_groups = cfg_factors.get_factor_groups(proj_cfg.factor_groups, "NEU")
             config_models = load_config_models(cfg_mdl_dir=proj_cfg.mclrn_dir, cfg_mdl_file=proj_cfg.mclrn_cfg_file)
             test_mdls = gen_model_tests(config_models=config_models, factor_groups=factor_groups)
-
             sim_args_list = get_sim_args_mdl_prd(
                 tests=test_mdls,
                 signals_dir=proj_cfg.sig_frm_mdl_prd_dir,
@@ -519,7 +518,6 @@ if __name__ == "__main__":
                 call_multiprocess=not args.nomp,
                 processes=args.processes,
             )
-
             # plot by group
             grouped_sim_args = get_sim_args_fac_neu_by_class(
                 factors=cfg_factors.get_factors_neu(),
@@ -535,6 +533,29 @@ if __name__ == "__main__":
                 evl_frm_fac_neu_dir=proj_cfg.evl_frm_fac_neu_dir,
                 bgn_date=bgn_date,
                 stp_date=stp_date,
+            )
+        elif args.type == "mdlPrd":
+            from solutions.mclrn_mdl_parser import load_config_models
+            from solutions.shared import gen_model_tests, get_sim_args_mdl_prd
+            from solutions.evaluations import main_evl_mdl_prd
+
+            factor_groups = cfg_factors.get_factor_groups(proj_cfg.factor_groups, "NEU")
+            config_models = load_config_models(cfg_mdl_dir=proj_cfg.mclrn_dir, cfg_mdl_file=proj_cfg.mclrn_cfg_file)
+            test_mdls = gen_model_tests(config_models=config_models, factor_groups=factor_groups)
+            sim_args_list = get_sim_args_mdl_prd(
+                tests=test_mdls,
+                signals_dir=proj_cfg.sig_frm_mdl_prd_dir,
+                ret_dir=proj_cfg.test_return_dir,
+                cost=proj_cfg.const.COST
+            )
+            main_evl_mdl_prd(
+                sim_args_list=sim_args_list,
+                sim_frm_mdl_prd_dir=proj_cfg.sim_frm_mdl_prd_dir,
+                evl_frm_mdl_prd_dir=proj_cfg.evl_frm_mdl_prd_dir,
+                bgn_date=bgn_date,
+                stp_date=stp_date,
+                call_multiprocess=not args.nomp,
+                processes=args.processes,
             )
         else:
             raise ValueError(f"args.type == {args.type} is illegal")

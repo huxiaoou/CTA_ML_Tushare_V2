@@ -89,6 +89,13 @@ proj_cfg = CCfgProj(
     factor_groups=_config["factor_groups"],
     cv=_config["cv"],
     mclrn=_config["mclrn"],
+
+    sig_frm_mdl_prd_dir=os.path.join(  # type:ignore
+        _config["path"]["project_root_dir"], _config["path"]["sig_frm_mdl_prd_dir"]),
+    sim_frm_mdl_prd_dir=os.path.join(  # type:ignore
+        _config["path"]["project_root_dir"], _config["path"]["sim_frm_mdl_prd_dir"]),
+    evl_frm_mdl_prd_dir=os.path.join(  # type:ignore
+        _config["path"]["project_root_dir"], _config["path"]["evl_frm_mdl_prd_dir"]),
 )
 
 # ---------- databases structure ----------

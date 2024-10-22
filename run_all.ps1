@@ -53,3 +53,8 @@ python main.py --bgn $bgn_date_sim --stp $stp_date evaluations --type facNeu
 # --- machine learning
 python main.py --bgn $bgn_date_ml --stp $stp_date mclrn --type parse
 python main.py --bgn $bgn_date_ml --stp $stp_date --processes 12 mclrn --type trnprd
+
+# --- machine learning predciton test
+python main.py --bgn $bgn_date_sig --stp $stp_date signals --type mdlPrd
+python main.py --bgn $bgn_date_sim --stp $stp_date simulations --type mdlPrd
+python main.py --bgn $bgn_date_sim --stp $stp_date evaluations --type mdlPrd

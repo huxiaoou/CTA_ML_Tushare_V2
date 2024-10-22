@@ -5,8 +5,9 @@ from rich.progress import Progress, track
 from husfort.qutility import check_and_makedirs, error_handler
 from husfort.qsqlite import CMgrSqlDb
 from husfort.qcalendar import CCalendar
-from solutions.shared import gen_sig_db, gen_fac_neu_db
-from typedef import CFactor, TFactors, TFactorClass, TFactorName, TFactorNames
+from solutions.shared import gen_sig_db, gen_fac_neu_db, gen_prdct_db
+from typedef import CFactor, TFactors, TFactorNames
+from typedef import CTestMdl
 
 
 class _CSignal:
@@ -51,6 +52,14 @@ class _CSignal:
         return 0
 
     @staticmethod
+    def map_factor_to_signal(data: pd.DataFrame) -> pd.DataFrame:
+        n = len(data)
+        data["weight"] = [1] * int(n / 2) + [0] * (n % 2) + [-1] * int(n / 2)
+        if (abs_sum := data["weight"].abs().sum()) > 0:
+            data["weight"] = data["weight"] / abs_sum
+        return data[["trade_date", "instrument", "weight"]]
+
+    @staticmethod
     def moving_average_signal(signal_data: pd.DataFrame, bgn_date: str, maw: int) -> pd.DataFrame:
         """
 
@@ -72,36 +81,27 @@ class _CSignal:
         return stack_data[["trade_date", "instrument", "weight"]]
 
 
+"""
+----------------------------------------
+--- signals from neutralized factors ---
+----------------------------------------
+"""
+
+
 class CSignalFromFactorNeu(_CSignal):
     def __init__(self, factor: CFactor, factor_save_root_dir: str, signal_save_dir: str, maw: int):
         self.factor = factor
         self.factor_save_root_dir = factor_save_root_dir
         self.maw = maw
-        signal_id = f"{factor.factor_name}.MA{maw:02d}"
+        signal_id = f"{factor.factor_name}.MA{self.maw:02d}"
         super().__init__(signal_save_dir=signal_save_dir, signal_id=signal_id)
-
-    @property
-    def factor_class(self) -> TFactorClass:
-        return self.factor.factor_class
-
-    @property
-    def factor_name(self) -> TFactorName:
-        return self.factor.factor_name
-
-    @staticmethod
-    def map_factor_to_signal(data: pd.DataFrame) -> pd.DataFrame:
-        n = len(data)
-        data["weight"] = [1] * int(n / 2) + [0] * (n % 2) + [-1] * int(n / 2)
-        if (abs_sum := data["weight"].abs().sum()) > 0:
-            data["weight"] = data["weight"] / abs_sum
-        return data[["trade_date", "instrument", "weight"]]
 
     def load_input(self, bgn_date: str, stp_date: str, calendar: CCalendar) -> pd.DataFrame:
         base_bgn_date = calendar.get_next_date(bgn_date, -self.maw + 1)
         db_struct_fac = gen_fac_neu_db(
             db_save_root_dir=self.factor_save_root_dir,
-            factor_class=self.factor_class,
-            factor_names=TFactorNames([self.factor_name]),
+            factor_class=self.factor.factor_class,
+            factor_names=TFactorNames([self.factor.factor_name]),
         )
         sqldb = CMgrSqlDb(
             db_save_dir=db_struct_fac.db_save_dir,
@@ -111,13 +111,13 @@ class CSignalFromFactorNeu(_CSignal):
         )
         data = sqldb.read_by_range(
             bgn_date=base_bgn_date, stp_date=stp_date,
-            value_columns=["trade_date", "instrument", self.factor_name],
+            value_columns=["trade_date", "instrument", self.factor.factor_name],
         )
         return data
 
     def core(self, input_data: pd.DataFrame, bgn_date: str, stp_date: str, calendar: CCalendar) -> pd.DataFrame:
         sorted_data = input_data.sort_values(
-            by=["trade_date", self.factor_name, "instrument"], ascending=[True, False, True]
+            by=["trade_date", self.factor.factor_name, "instrument"], ascending=[True, False, True]
         )
         grouped_data = sorted_data.groupby(by=["trade_date"], group_keys=False)
         signal_data = grouped_data.apply(self.map_factor_to_signal)
@@ -126,13 +126,8 @@ class CSignalFromFactorNeu(_CSignal):
 
 
 def process_for_signal_from_factor_neu(
-        factor: CFactor,
-        factor_save_root_dir: str,
-        maw: int,
-        signal_save_dir: str,
-        bgn_date: str,
-        stp_date: str,
-        calendar: CCalendar,
+        factor: CFactor, factor_save_root_dir: str, maw: int, signal_save_dir: str,
+        bgn_date: str, stp_date: str, calendar: CCalendar,
 ):
     signal = CSignalFromFactorNeu(
         factor, factor_save_root_dir=factor_save_root_dir, signal_save_dir=signal_save_dir, maw=maw,
@@ -181,6 +176,99 @@ def main_signals_from_factor_neu(
                 factor=factor,
                 factor_save_root_dir=factor_save_root_dir,
                 maw=maw,
+                signal_save_dir=signal_save_dir,
+                bgn_date=bgn_date,
+                stp_date=stp_date,
+                calendar=calendar,
+            )
+    return 0
+
+
+"""
+-------------------------------------
+--- signals from model prediction ---
+-------------------------------------
+"""
+
+
+class CSignalFromMdlPrd(_CSignal):
+    def __init__(self, test: CTestMdl, mclrn_prd_dir: str, signal_save_dir: str):
+        self.test = test
+        self.mclrn_prd_dir = mclrn_prd_dir
+        self.maw = test.ret.win
+        signal_id = f"{test.save_tag_mdl}.MA{self.maw:02d}"
+        super().__init__(signal_save_dir=signal_save_dir, signal_id=signal_id)
+
+    def load_input(self, bgn_date: str, stp_date: str, calendar: CCalendar) -> pd.DataFrame:
+        base_bgn_date = calendar.get_next_date(bgn_date, -self.maw + 1)
+        db_struct_prd = gen_prdct_db(db_save_root_dir=self.mclrn_prd_dir, test=self.test)
+        sqldb = CMgrSqlDb(
+            db_save_dir=db_struct_prd.db_save_dir,
+            db_name=db_struct_prd.db_name,
+            table=db_struct_prd.table,
+            mode="r",
+        )
+        data = sqldb.read_by_range(
+            bgn_date=base_bgn_date, stp_date=stp_date,
+            value_columns=["trade_date", "instrument", self.test.ret.ret_name],
+        )
+        return data
+
+    def core(self, input_data: pd.DataFrame, bgn_date: str, stp_date: str, calendar: CCalendar) -> pd.DataFrame:
+        sorted_data = input_data.sort_values(
+            by=["trade_date", self.test.ret.ret_name, "instrument"], ascending=[True, False, True]
+        )
+        grouped_data = sorted_data.groupby(by=["trade_date"], group_keys=False)
+        signal_data = grouped_data.apply(self.map_factor_to_signal)
+        signal_data_ma = self.moving_average_signal(signal_data, bgn_date=bgn_date, maw=self.maw)
+        return signal_data_ma
+
+
+def process_for_signal_from_mdl_prd(
+        test: CTestMdl, mclrn_prd_dir: str, signal_save_dir: str,
+        bgn_date: str, stp_date: str, calendar: CCalendar,
+):
+    signal = CSignalFromMdlPrd(test=test, mclrn_prd_dir=mclrn_prd_dir, signal_save_dir=signal_save_dir)
+    signal.main(bgn_date, stp_date, calendar)
+    return 0
+
+
+def main_signals_from_mdl_prd(
+        tests: list[CTestMdl],
+        mclrn_prd_dir: str,
+        signal_save_dir: str,
+        bgn_date: str,
+        stp_date: str,
+        calendar: CCalendar,
+        call_multiprocess: bool,
+        processes: int,
+):
+    desc = "Translating neutralized factors to signals"
+    if call_multiprocess:
+        with Progress() as pb:
+            main_task = pb.add_task(description=desc, total=len(tests))
+            with mp.get_context("spawn").Pool(processes) as pool:
+                for test in tests:
+                    pool.apply_async(
+                        process_for_signal_from_mdl_prd,
+                        kwds={
+                            "test": test,
+                            "mclrn_prd_dir": mclrn_prd_dir,
+                            "signal_save_dir": signal_save_dir,
+                            "bgn_date": bgn_date,
+                            "stp_date": stp_date,
+                            "calendar": calendar,
+                        },
+                        callback=lambda _: pb.update(main_task, advance=1),
+                        error_callback=error_handler,
+                    )
+                pool.close()
+                pool.join()
+    else:
+        for test in track(tests, description=desc):
+            process_for_signal_from_mdl_prd(
+                test=test,
+                mclrn_prd_dir=mclrn_prd_dir,
                 signal_save_dir=signal_save_dir,
                 bgn_date=bgn_date,
                 stp_date=stp_date,

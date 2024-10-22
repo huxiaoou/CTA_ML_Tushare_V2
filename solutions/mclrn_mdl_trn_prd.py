@@ -158,6 +158,9 @@ class __CMclrn:
     def get_X(self, x_data: pd.DataFrame) -> pd.DataFrame:
         return x_data[self.x_cols]
 
+    def display_fitted_estimator(self) -> None:
+        pass
+
     def fit_estimator(self, x_data: pd.DataFrame, y_data: pd.Series):
         if self.using_instru:
             x, y = x_data.reset_index(level="instrument"), y_data
@@ -166,6 +169,7 @@ class __CMclrn:
             x, y = x_data.values, y_data.values
         grid_cv_seeker = GridSearchCV(self.prototype, self.param_grid, cv=self.cv)
         self.fitted_estimator = grid_cv_seeker.fit(x, y)
+        # self.display_fitted_estimator()
         return 0
 
     def check_model_existence(self, month_id: str) -> bool:
@@ -332,6 +336,14 @@ class CMclrnRidge(__CMclrn):
         super().__init__(using_instru=False, **kwargs)
         self.param_grid = {"alpha": alpha}
         self.prototype = Ridge(fit_intercept=False)
+
+    def display_fitted_estimator(self) -> None:
+        alpha = self.fitted_estimator.best_estimator_.alpha
+        score = self.fitted_estimator.best_score_
+        coef = self.fitted_estimator.best_estimator_.coef_
+        text = f"{self.test.save_tag_mdl}, best alpha = {alpha:>6.1f}, score = {score:>9.6f}"
+        print(text)
+        print(coef)
 
 
 class CMclrnLGBM(__CMclrn):

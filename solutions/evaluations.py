@@ -50,21 +50,18 @@ class CEvl:
         return res
 
 
-class CEvlFromSim(CEvl):
-    def __init__(self, sim_args: CSimArgs, db_save_dir: str):
+class CEvlFrmSim(CEvl):
+    def __init__(self, sim_args: CSimArgs, sim_save_dir: str):
         self.sim_args = sim_args
-        db_struct_nav = gen_nav_db(db_save_dir=db_save_dir, save_id=sim_args.sim_id)
+        db_struct_nav = gen_nav_db(db_save_dir=sim_save_dir, save_id=sim_args.sim_id)
         super().__init__(db_struct_nav)
 
 
-"""
--------------------------------------------
---- evaluations for neutralized factors ---
--------------------------------------------
-"""
+class CEvlFacNeu(CEvlFrmSim):
+    """
+    --- evaluations for neutralized factors ---
+    """
 
-
-class CEvlFacNeu(CEvlFromSim):
     def add_arguments(self, res: dict):
         factor_name, maw, ret_name = self.sim_args.sim_id.split(".")
         other_arguments = {
@@ -76,111 +73,11 @@ class CEvlFacNeu(CEvlFromSim):
         return 0
 
 
-def process_for_evl_fac_neu(sim_args: CSimArgs, sim_frm_fac_neu_dir: str, bgn_date: str, stp_date: str) -> dict:
-    s = CEvlFacNeu(sim_args, sim_frm_fac_neu_dir)
-    return s.main(bgn_date, stp_date)
+class CEvlMdlPrd(CEvlFrmSim):
+    """
+    --- evaluations for machine learning models ---
+    """
 
-
-def main_evl_fac_neu(
-        sim_args_list: list[CSimArgs],
-        sim_frm_fac_neu_dir: str,
-        evl_frm_fac_neu_dir: str,
-        bgn_date: str,
-        stp_date: str,
-        call_multiprocess: bool,
-        processes: int,
-):
-    desc = "Calculating evaluations for neutralized factors"
-    evl_sims: list[dict] = []
-    if call_multiprocess:
-        with Progress() as pb:
-            main_task = pb.add_task(description=desc, total=len(sim_args_list))
-            with mp.get_context("spawn").Pool(processes=processes) as pool:
-                jobs = []
-                for sim_args in sim_args_list:
-                    job = pool.apply_async(
-                        process_for_evl_fac_neu,
-                        args=(sim_args, sim_frm_fac_neu_dir, bgn_date, stp_date),
-                        callback=lambda _: pb.update(main_task, advance=1),
-                        error_callback=error_handler,
-                    )
-                    jobs.append(job)
-                pool.close()
-                pool.join()
-            evl_sims = [job.get() for job in jobs]
-    else:
-        for sim_args in track(sim_args_list, description=desc):
-            evl = process_for_evl_fac_neu(sim_args, sim_frm_fac_neu_dir, bgn_date, stp_date)
-            evl_sims.append(evl)
-
-    evl_data = pd.DataFrame(evl_sims)
-    evl_data = evl_data.sort_values(by="sharpe", ascending=False)
-    evl_data.insert(loc=0, column="calmar", value=evl_data.pop("calmar"))
-    evl_data.insert(loc=0, column="sharpe", value=evl_data.pop("sharpe"))
-
-    pd.set_option("display.max_rows", 40)
-    pd.set_option("display.float_format", lambda z: f"{z:.3f}")
-    print(evl_data)
-
-    check_and_makedirs(evl_frm_fac_neu_dir)
-    evl_file = "evaluations_for_neu_facs.csv.gz"
-    evl_path = os.path.join(evl_frm_fac_neu_dir, evl_file)
-    evl_data.to_csv(evl_path, float_format="%.6f", index=False)
-    return 0
-
-
-def plot_sim_args_list(
-        grp_id: TSimGrpId,
-        sim_args_list: list[CSimArgs],
-        sim_frm_fac_neu_dir: str, evl_frm_fac_neu_dir: str,
-        bgn_date: str, stp_date: str,
-):
-    ret_data_by_sim = {}
-    for sim_args in sim_args_list:
-        s = CEvlFacNeu(sim_args, sim_frm_fac_neu_dir)
-        ret_data_by_sim[sim_args.sim_id] = s.get_ret(bgn_date, stp_date)
-    ret_data = pd.DataFrame(ret_data_by_sim)
-    nav_data = (1 + ret_data).cumprod()
-    fig_name = f"{grp_id[0]}-{grp_id[1]}-{grp_id[2]}"
-    artist = CPlotLines(
-        plot_data=nav_data,
-        fig_name=fig_name,
-        fig_save_dir=evl_frm_fac_neu_dir,
-        fig_save_type="jpg",
-        colormap="jet",
-    )
-    artist.plot()
-    artist.save_and_close()
-    return 0
-
-
-def main_plt_fac_neu(
-        grouped_sim_args: dict[TSimGrpId, list[CSimArgs]],
-        sim_frm_fac_neu_dir: str,
-        evl_frm_fac_neu_dir: str,
-        bgn_date: str,
-        stp_date: str,
-):
-    for grp_id, sim_args_list in track(grouped_sim_args.items(), description="Plot by group id"):
-        plot_sim_args_list(
-            grp_id=grp_id,
-            sim_args_list=sim_args_list,
-            sim_frm_fac_neu_dir=sim_frm_fac_neu_dir,
-            evl_frm_fac_neu_dir=evl_frm_fac_neu_dir,
-            bgn_date=bgn_date,
-            stp_date=stp_date,
-        )
-    return 0
-
-
-"""
------------------------------------------------
---- evaluations for machine learning models ---
------------------------------------------------
-"""
-
-
-class CEvlMdlPrd(CEvlFromSim):
     def add_arguments(self, res: dict):
         unique_id, prd_ret, factor_class, trn_win, model, maw, tgt_ret = self.sim_args.sim_id.split(".")
         other_arguments = {
@@ -196,21 +93,36 @@ class CEvlMdlPrd(CEvlFromSim):
         return 0
 
 
-def process_for_evl_mdl_prd(sim_args: CSimArgs, sim_frm_mdl_prd_dir: str, bgn_date: str, stp_date: str) -> dict:
-    s = CEvlMdlPrd(sim_args, sim_frm_mdl_prd_dir)
+def process_for_evl_frm_sim(
+        sim_type: str,
+        sim_args: CSimArgs,
+        sim_save_dir: str,
+        bgn_date: str,
+        stp_date: str,
+) -> dict:
+    if sim_type == "facNeu":
+        s = CEvlFacNeu(sim_args, sim_save_dir=sim_save_dir)
+    elif sim_type == "mdlPrd":
+        s = CEvlMdlPrd(sim_args, sim_save_dir=sim_save_dir)
+    else:
+        raise ValueError(f"sim type = {sim_type} is illegal")
     return s.main(bgn_date, stp_date)
 
 
-def main_evl_mdl_prd(
+def main_evl_sims(
+        sim_type: str,
         sim_args_list: list[CSimArgs],
-        sim_frm_mdl_prd_dir: str,
-        evl_frm_mdl_prd_dir: str,
+        sim_save_dir: str,
+        evl_save_dir: str,
+        evl_save_file: str,
+        header_vars: list[str],
+        sort_vars: list[str],
         bgn_date: str,
         stp_date: str,
         call_multiprocess: bool,
         processes: int,
 ):
-    desc = "Calculating evaluations for machine learning models"
+    desc = "Calculating evaluations for neutralized factors"
     evl_sims: list[dict] = []
     if call_multiprocess:
         with Progress() as pb:
@@ -219,8 +131,8 @@ def main_evl_mdl_prd(
                 jobs = []
                 for sim_args in sim_args_list:
                     job = pool.apply_async(
-                        process_for_evl_mdl_prd,
-                        args=(sim_args, sim_frm_mdl_prd_dir, bgn_date, stp_date),
+                        process_for_evl_frm_sim,
+                        args=(sim_type, sim_args, sim_save_dir, bgn_date, stp_date),
                         callback=lambda _: pb.update(main_task, advance=1),
                         error_callback=error_handler,
                     )
@@ -230,22 +142,73 @@ def main_evl_mdl_prd(
             evl_sims = [job.get() for job in jobs]
     else:
         for sim_args in track(sim_args_list, description=desc):
-            evl = process_for_evl_mdl_prd(sim_args, sim_frm_mdl_prd_dir, bgn_date, stp_date)
+            evl = process_for_evl_frm_sim(sim_type, sim_args, sim_save_dir, bgn_date, stp_date)
             evl_sims.append(evl)
 
     evl_data = pd.DataFrame(evl_sims)
     evl_data["sharpe+calmar"] = evl_data["sharpe"] + evl_data["calmar"]
-    evl_data = evl_data.sort_values(by=["sharpe+calmar"], ascending=False)
-    evl_data.insert(loc=0, column="calmar", value=evl_data.pop("calmar"))
-    evl_data.insert(loc=0, column="sharpe", value=evl_data.pop("sharpe"))
-    evl_data.insert(loc=0, column="sharpe+calmar", value=evl_data.pop("sharpe+calmar"))
+    evl_data = evl_data.sort_values(by=sort_vars, ascending=False)
+    for header_var in header_vars[::-1]:
+        evl_data.insert(loc=0, column=header_var, value=evl_data.pop(header_var))
 
     pd.set_option("display.max_rows", 40)
-    pd.set_option("display.float_format", lambda z: f"{z:.3f}")
+    pd.set_option("display.float_format", lambda z: f"{z:.4f}")
     print(evl_data)
 
-    check_and_makedirs(evl_frm_mdl_prd_dir)
-    evl_file = "evaluations_for_mdl_prd.csv.gz"
-    evl_path = os.path.join(evl_frm_mdl_prd_dir, evl_file)
+    check_and_makedirs(evl_save_dir)
+    evl_path = os.path.join(evl_save_dir, evl_save_file)
     evl_data.to_csv(evl_path, float_format="%.6f", index=False)
+    return 0
+
+
+"""
+------------
+--- plot ---
+------------
+"""
+
+
+def plot_sim_args_list(
+        grp_id: TSimGrpId,
+        sim_args_list: list[CSimArgs],
+        sim_save_dir: str, plt_save_dir: str,
+        bgn_date: str, stp_date: str,
+):
+    ret_data_by_sim = {}
+    for sim_args in sim_args_list:
+        s = CEvlFacNeu(sim_args, sim_save_dir)
+        ret_data_by_sim[sim_args.sim_id] = s.get_ret(bgn_date, stp_date)
+    ret_data = pd.DataFrame(ret_data_by_sim)
+    nav_data = (1 + ret_data).cumprod()
+    fig_name = f"{grp_id[0]}-{grp_id[1]}-{grp_id[2]}"
+
+    artist = CPlotLines(
+        plot_data=nav_data,
+        fig_name=fig_name,
+        fig_save_dir=plt_save_dir,
+        fig_save_type="jpg",
+        colormap="jet",
+    )
+    artist.plot()
+    artist.save_and_close()
+    return 0
+
+
+def main_plt_fac_neu(
+        grouped_sim_args: dict[TSimGrpId, list[CSimArgs]],
+        sim_save_dir: str,
+        plt_save_dir: str,
+        bgn_date: str,
+        stp_date: str,
+):
+    check_and_makedirs(plt_save_dir)
+    for grp_id, sim_args_list in track(grouped_sim_args.items(), description="Plot by group id"):
+        plot_sim_args_list(
+            grp_id=grp_id,
+            sim_args_list=sim_args_list,
+            sim_save_dir=sim_save_dir,
+            plt_save_dir=plt_save_dir,
+            bgn_date=bgn_date,
+            stp_date=stp_date,
+        )
     return 0

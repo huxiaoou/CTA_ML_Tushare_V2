@@ -62,6 +62,7 @@ def parse_args():
 
 
 if __name__ == "__main__":
+    import os
     from project_config import proj_cfg, db_struct_cfg, cfg_factors
     from husfort.qlog import define_logger
     from husfort.qcalendar import CCalendar
@@ -499,7 +500,7 @@ if __name__ == "__main__":
     elif args.switch == "evaluations":
         if args.type == "facNeu":
             from solutions.shared import get_sim_args_fac_neu, get_sim_args_fac_neu_by_class
-            from solutions.evaluations import main_evl_fac_neu, main_plt_fac_neu
+            from solutions.evaluations import main_evl_sims, main_plt_fac_neu
 
             sim_args_list = get_sim_args_fac_neu(
                 factors=cfg_factors.get_factors_neu(),
@@ -509,10 +510,14 @@ if __name__ == "__main__":
                 ret_dir=proj_cfg.test_return_dir,
                 cost=0,
             )
-            main_evl_fac_neu(
+            main_evl_sims(
+                sim_type=args.type,
                 sim_args_list=sim_args_list,
-                sim_frm_fac_neu_dir=proj_cfg.sim_frm_fac_neu_dir,
-                evl_frm_fac_neu_dir=proj_cfg.evl_frm_fac_neu_dir,
+                sim_save_dir=proj_cfg.sim_frm_fac_neu_dir,
+                evl_save_dir=proj_cfg.evl_frm_fac_neu_dir,
+                evl_save_file="evaluations_for_fac_neu.csv.gz",
+                header_vars=["sharpe", "calmar", "sharpe+calmar"],
+                sort_vars=["sharpe"],
                 bgn_date=bgn_date,
                 stp_date=stp_date,
                 call_multiprocess=not args.nomp,
@@ -529,15 +534,15 @@ if __name__ == "__main__":
             )
             main_plt_fac_neu(
                 grouped_sim_args=grouped_sim_args,
-                sim_frm_fac_neu_dir=proj_cfg.sim_frm_fac_neu_dir,
-                evl_frm_fac_neu_dir=proj_cfg.evl_frm_fac_neu_dir,
+                sim_save_dir=proj_cfg.sim_frm_fac_neu_dir,
+                plt_save_dir=os.path.join(proj_cfg.evl_frm_fac_neu_dir, "plot-nav"),
                 bgn_date=bgn_date,
                 stp_date=stp_date,
             )
         elif args.type == "mdlPrd":
             from solutions.mclrn_mdl_parser import load_config_models
             from solutions.shared import gen_model_tests, get_sim_args_mdl_prd
-            from solutions.evaluations import main_evl_mdl_prd
+            from solutions.evaluations import main_evl_sims
 
             factor_groups = cfg_factors.get_factor_groups(proj_cfg.factor_groups, "NEU")
             config_models = load_config_models(cfg_mdl_dir=proj_cfg.mclrn_dir, cfg_mdl_file=proj_cfg.mclrn_cfg_file)
@@ -548,10 +553,14 @@ if __name__ == "__main__":
                 ret_dir=proj_cfg.test_return_dir,
                 cost=proj_cfg.const.COST
             )
-            main_evl_mdl_prd(
+            main_evl_sims(
+                sim_type=args.type,
                 sim_args_list=sim_args_list,
-                sim_frm_mdl_prd_dir=proj_cfg.sim_frm_mdl_prd_dir,
-                evl_frm_mdl_prd_dir=proj_cfg.evl_frm_mdl_prd_dir,
+                sim_save_dir=proj_cfg.sim_frm_mdl_prd_dir,
+                evl_save_dir=proj_cfg.evl_frm_mdl_prd_dir,
+                evl_save_file="evaluations_for_mdl_prd.csv.gz",
+                header_vars=["sharpe+calmar", "sharpe", "calmar"],
+                sort_vars=["sharpe+calmar"],
                 bgn_date=bgn_date,
                 stp_date=stp_date,
                 call_multiprocess=not args.nomp,

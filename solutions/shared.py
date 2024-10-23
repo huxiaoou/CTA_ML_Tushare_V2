@@ -4,7 +4,8 @@ import scipy.stats as sps
 import itertools as ittl
 from rich.progress import Progress
 from husfort.qsqlite import CDbStruct, CSqlTable, CSqlVar
-from typedef import TFactorClass, TFactorNames, TFactors, CSimArgs, TRets, TSimGrpId, TUniqueId
+from typedef import TFactorClass, TFactorName, TFactorNames, TFactors, CSimArgs, TRets, TUniqueId
+from typedef import TSimGrpIdByFacNeu, TSimGrpIdByFacGrp
 from typedef import CTestMdl, CRet, CModel, TFactorGroups
 
 
@@ -229,24 +230,17 @@ def get_sim_args_fac_neu(
     return res
 
 
-def get_sim_args_fac_neu_by_class(
-        factors: TFactors, maws: list[int], rets: TRets, signals_dir: str, ret_dir: str, cost: float
-) -> dict[TSimGrpId, list[CSimArgs]]:
-    res: dict[TSimGrpId, list[CSimArgs]] = {}
-    for factor, maw, ret in ittl.product(factors, maws, rets):
-        key = (factor.factor_class, ret.ret_prc, maw)
+def group_sim_args_by_factor_class(
+        sim_args_list: list[CSimArgs], mapper_name_to_class: dict[TFactorName, TFactorClass]
+) -> dict[TSimGrpIdByFacNeu, list[CSimArgs]]:
+    res: dict[TSimGrpIdByFacNeu, list[CSimArgs]] = {}
+    for sim_args in sim_args_list:
+        factor_name, maw, ret_name = sim_args.sim_id.split(".")
+        factor_class = mapper_name_to_class[TFactorName(factor_name)]
+        ret_prc = ret_name[0:3]
+        key = TSimGrpIdByFacNeu((factor_class, ret_prc, maw))
         if key not in res:
             res[key] = []
-
-        signal_id = f"{factor.factor_name}.MA{maw:02d}"
-        ret_names = [ret.ret_name]
-        sim_args = CSimArgs(
-            sim_id=f"{signal_id}.{ret.ret_name}",
-            tgt_ret=ret,
-            db_struct_sig=gen_sig_db(db_save_dir=signals_dir, signal_id=signal_id),
-            db_struct_ret=gen_tst_ret_raw_db(db_save_root_dir=ret_dir, save_id=ret.save_id, rets=ret_names),
-            cost=cost,
-        )
         res[key].append(sim_args)
     return res
 
@@ -265,6 +259,17 @@ def get_sim_args_mdl_prd(tests: list[CTestMdl], signals_dir: str, ret_dir: str, 
             cost=cost,
         )
         res.append(sim_args)
+    return res
+
+
+def group_sim_args_by_factor_group(sim_args_list: list[CSimArgs]) -> dict[TSimGrpIdByFacGrp, list[CSimArgs]]:
+    res: dict[TSimGrpIdByFacGrp, list[CSimArgs]] = {}
+    for sim_args in sim_args_list:
+        unique_id, prd_ret, factor_group, trn_win, model, maw, tgt_ret = sim_args.sim_id.split(".")
+        key = TSimGrpIdByFacGrp((factor_group, prd_ret[0:3]))
+        if key not in res:
+            res[key] = []
+        res[key].append(sim_args)
     return res
 
 

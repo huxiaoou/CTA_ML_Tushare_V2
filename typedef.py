@@ -674,6 +674,16 @@ class CCfgFactors:
             res[group_id] = factor_group
         return res
 
+    def get_mapper_name_to_class_raw(self) -> dict[TFactorName, TFactorClass]:
+        factors = self.get_factors_raw()
+        d = {f.factor_name: f.factor_class for f in factors}
+        return d
+
+    def get_mapper_name_to_class_neu(self) -> dict[TFactorName, TFactorClass]:
+        factors = self.get_factors_neu()
+        d = {f.factor_name: f.factor_class for f in factors}
+        return d
+
 
 """
 --------------------------------------
@@ -707,7 +717,8 @@ class CSimArgs:
     cost: float
 
 
-TSimGrpId = tuple[TFactorClass, TRetPrc, int]
+TSimGrpIdByFacNeu = tuple[TFactorClass, TRetPrc, str]
+TSimGrpIdByFacGrp = tuple[TGroupId, TRetPrc]
 
 """
 --------------------------------
@@ -826,7 +837,7 @@ class CCfgProj:
     prd: CCfgPrd
     sim: CCfgSim
     factors: dict
-    factor_groups: dict[str, list[TFactorClass]]
+    factor_groups: dict[TGroupId, list[TFactorClass]]
     cv: int
     mclrn: dict[str, dict]
 

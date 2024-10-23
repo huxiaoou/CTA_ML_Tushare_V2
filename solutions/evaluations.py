@@ -8,7 +8,7 @@ from husfort.qevaluation import CNAV
 from husfort.qsqlite import CMgrSqlDb, CDbStruct
 from husfort.qplot import CPlotLines
 from solutions.shared import gen_nav_db
-from typedef import CSimArgs, TSimGrpId
+from typedef import CSimArgs, TSimGrpIdByFacNeu, TSimGrpIdByFacGrp
 
 
 class CEvl:
@@ -79,11 +79,11 @@ class CEvlMdlPrd(CEvlFrmSim):
     """
 
     def add_arguments(self, res: dict):
-        unique_id, prd_ret, factor_class, trn_win, model, maw, tgt_ret = self.sim_args.sim_id.split(".")
+        unique_id, prd_ret, factor_group, trn_win, model, maw, tgt_ret = self.sim_args.sim_id.split(".")
         other_arguments = {
             "unique_id": unique_id,
             "prd_ret": prd_ret,
-            "factor_class": factor_class,
+            "factor_group": factor_group,
             "trn_win": trn_win,
             "model": model,
             "maw": maw,
@@ -169,7 +169,7 @@ def main_evl_sims(
 
 
 def plot_sim_args_list(
-        grp_id: TSimGrpId,
+        fig_name: str,
         sim_args_list: list[CSimArgs],
         sim_save_dir: str, plt_save_dir: str,
         bgn_date: str, stp_date: str,
@@ -180,8 +180,6 @@ def plot_sim_args_list(
         ret_data_by_sim[sim_args.sim_id] = s.get_ret(bgn_date, stp_date)
     ret_data = pd.DataFrame(ret_data_by_sim)
     nav_data = (1 + ret_data).cumprod()
-    fig_name = f"{grp_id[0]}-{grp_id[1]}-{grp_id[2]}"
-
     artist = CPlotLines(
         plot_data=nav_data,
         fig_name=fig_name,
@@ -190,12 +188,13 @@ def plot_sim_args_list(
         colormap="jet",
     )
     artist.plot()
+    artist.set_legend()
     artist.save_and_close()
     return 0
 
 
-def main_plt_fac_neu(
-        grouped_sim_args: dict[TSimGrpId, list[CSimArgs]],
+def main_plt_grouped_sim_args(
+        grouped_sim_args: dict[TSimGrpIdByFacNeu | TSimGrpIdByFacGrp, list[CSimArgs]],
         sim_save_dir: str,
         plt_save_dir: str,
         bgn_date: str,
@@ -203,8 +202,9 @@ def main_plt_fac_neu(
 ):
     check_and_makedirs(plt_save_dir)
     for grp_id, sim_args_list in track(grouped_sim_args.items(), description="Plot by group id"):
+        fig_name = "-".join(grp_id)
         plot_sim_args_list(
-            grp_id=grp_id,
+            fig_name=fig_name,
             sim_args_list=sim_args_list,
             sim_save_dir=sim_save_dir,
             plt_save_dir=plt_save_dir,

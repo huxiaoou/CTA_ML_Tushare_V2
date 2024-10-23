@@ -484,7 +484,7 @@ if __name__ == "__main__":
                 tests=test_mdls,
                 signals_dir=proj_cfg.sig_frm_mdl_prd_dir,
                 ret_dir=proj_cfg.test_return_dir,
-                cost=proj_cfg.const.COST,
+                cost=0,
             )
             main_simulations(
                 sim_args_list=sim_args_list,
@@ -498,9 +498,10 @@ if __name__ == "__main__":
         else:
             raise ValueError(f"args.type == {args.type} is illegal")
     elif args.switch == "evaluations":
+        from solutions.evaluations import main_evl_sims, main_plt_grouped_sim_args
+
         if args.type == "facNeu":
-            from solutions.shared import get_sim_args_fac_neu, get_sim_args_fac_neu_by_class
-            from solutions.evaluations import main_evl_sims, main_plt_fac_neu
+            from solutions.shared import get_sim_args_fac_neu, group_sim_args_by_factor_class
 
             sim_args_list = get_sim_args_fac_neu(
                 factors=cfg_factors.get_factors_neu(),
@@ -524,15 +525,8 @@ if __name__ == "__main__":
                 processes=args.processes,
             )
             # plot by group
-            grouped_sim_args = get_sim_args_fac_neu_by_class(
-                factors=cfg_factors.get_factors_neu(),
-                maws=proj_cfg.prd.wins,
-                rets=proj_cfg.get_raw_test_rets(),
-                signals_dir=proj_cfg.sig_frm_fac_neu_dir,
-                ret_dir=proj_cfg.test_return_dir,
-                cost=0,
-            )
-            main_plt_fac_neu(
+            grouped_sim_args = group_sim_args_by_factor_class(sim_args_list, cfg_factors.get_mapper_name_to_class_neu())
+            main_plt_grouped_sim_args(
                 grouped_sim_args=grouped_sim_args,
                 sim_save_dir=proj_cfg.sim_frm_fac_neu_dir,
                 plt_save_dir=os.path.join(proj_cfg.evl_frm_fac_neu_dir, "plot-nav"),
@@ -541,8 +535,7 @@ if __name__ == "__main__":
             )
         elif args.type == "mdlPrd":
             from solutions.mclrn_mdl_parser import load_config_models
-            from solutions.shared import gen_model_tests, get_sim_args_mdl_prd
-            from solutions.evaluations import main_evl_sims
+            from solutions.shared import gen_model_tests, get_sim_args_mdl_prd, group_sim_args_by_factor_group
 
             factor_groups = cfg_factors.get_factor_groups(proj_cfg.factor_groups, "NEU")
             config_models = load_config_models(cfg_mdl_dir=proj_cfg.mclrn_dir, cfg_mdl_file=proj_cfg.mclrn_cfg_file)
@@ -551,7 +544,7 @@ if __name__ == "__main__":
                 tests=test_mdls,
                 signals_dir=proj_cfg.sig_frm_mdl_prd_dir,
                 ret_dir=proj_cfg.test_return_dir,
-                cost=proj_cfg.const.COST
+                cost=0
             )
             main_evl_sims(
                 sim_type=args.type,
@@ -565,6 +558,13 @@ if __name__ == "__main__":
                 stp_date=stp_date,
                 call_multiprocess=not args.nomp,
                 processes=args.processes,
+            )
+            grouped_sim_args = group_sim_args_by_factor_group(sim_args_list)
+            main_plt_grouped_sim_args(
+                grouped_sim_args=grouped_sim_args,
+                sim_save_dir=proj_cfg.sim_frm_mdl_prd_dir,
+                plt_save_dir=os.path.join(proj_cfg.evl_frm_mdl_prd_dir, "plot-nav"),
+                bgn_date=bgn_date, stp_date=stp_date,
             )
         else:
             raise ValueError(f"args.type == {args.type} is illegal")

@@ -27,6 +27,7 @@ path:
   sig_frm_mdl_prd_dir: sig_frm_mdl_prd
   sim_frm_mdl_prd_dir: sim_frm_mdl_prd
   evl_frm_mdl_prd_dir: evl_frm_mdl_prd
+  opt_frm_mdl_prd_dir: opt_frm_mdl_prd
 
 mkt_idxes:
   COM: NH0100.NHF
@@ -199,6 +200,8 @@ prd:
   wins: [ 5, 10, 15 ]
 sim:
   wins: [ 1 ]
+optimize:
+  win: 60
 
 # ------- database structure -------
 db_struct:
@@ -322,7 +325,7 @@ factor_groups:
   HFT: [ AMP, EXR, SMT, RWTC ]
   TA: [ TA ]
 
-  #  ALL: [
+  #  G0: [
   #    MTM, SKEW, RS, BASIS, TS,
   #    S0BETA, S1BETA, CBETA, IBETA, PBETA,
   #    CTP, CVP, CSP,

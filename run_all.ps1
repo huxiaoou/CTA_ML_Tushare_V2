@@ -58,3 +58,6 @@ python main.py --bgn $bgn_date_ml --stp $stp_date --processes 12 mclrn --type tr
 python main.py --bgn $bgn_date_sig --stp $stp_date signals --type mdlPrd
 python main.py --bgn $bgn_date_sim --stp $stp_date simulations --type mdlPrd
 python main.py --bgn $bgn_date_sim --stp $stp_date evaluations --type mdlPrd
+
+# --- optimize machine learning
+python main.py --bgn 20180601 --stp $stp_date optimize --type mdlPrd

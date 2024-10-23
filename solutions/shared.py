@@ -206,6 +206,18 @@ def gen_prdct_db(db_save_root_dir: str, test: CTestMdl) -> CDbStruct:
     )
 
 
+def gen_opt_wgt_db(db_save_dir: str, save_id: str, underlying_assets_names: list[str]) -> CDbStruct:
+    return CDbStruct(
+        db_save_dir=db_save_dir,
+        db_name=f"{save_id}.db",
+        table=CSqlTable(
+            name="weights",
+            primary_keys=[CSqlVar("trade_date", "TEXT")],
+            value_columns=[CSqlVar(_, "REAL") for _ in underlying_assets_names],
+        )
+    )
+
+
 # -----------------------------------------
 # ------ arguments about simulations ------
 # -----------------------------------------

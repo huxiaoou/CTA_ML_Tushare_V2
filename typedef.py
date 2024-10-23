@@ -827,6 +827,7 @@ class CCfgProj:
     sig_frm_mdl_prd_dir: str
     sim_frm_mdl_prd_dir: str
     evl_frm_mdl_prd_dir: str
+    opt_frm_mdl_prd_dir: str
 
     # --- project parameters
     universe: TUniverse
@@ -836,6 +837,7 @@ class CCfgProj:
     trn: CCfgTrn
     prd: CCfgPrd
     sim: CCfgSim
+    optimize: dict
     factors: dict
     factor_groups: dict[TGroupId, list[TFactorClass]]
     cv: int

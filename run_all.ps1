@@ -65,3 +65,8 @@ python main.py --bgn 20180601 --stp $stp_date signals --type mdlOpt
 python main.py --bgn 20180601 --stp $stp_date simulations --type mdlOpt
 python main.py --bgn 20180601 --stp $stp_date evaluations --type mdlOpt
 python main.py --bgn 20180601 --stp $stp_date optimize --type mdlOpt # give weights for each factor_group
+
+# --- calculate signals, simulations and optimization for each price type
+python main.py --bgn 20180702 --stp $stp_date signals --type grpOpt
+python main.py --bgn 20180702 --stp $stp_date simulations --type grpOpt
+python main.py --bgn 20180702 --stp $stp_date evaluations --type grpOpt

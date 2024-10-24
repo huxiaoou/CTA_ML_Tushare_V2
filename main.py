@@ -44,15 +44,15 @@ def parse_args():
 
     # switch: signals
     arg_parser_sub = arg_parser_subs.add_parser(name="signals", help="generate signals")
-    arg_parser_sub.add_argument("--type", type=str, choices=("facNeu", "mdlPrd", "mdlOpt"))
+    arg_parser_sub.add_argument("--type", type=str, choices=("facNeu", "mdlPrd", "mdlOpt", "grpOpt"))
 
     # switch: simulations
     arg_parser_sub = arg_parser_subs.add_parser(name="simulations", help="simulate from signals")
-    arg_parser_sub.add_argument("--type", type=str, choices=("facNeu", "mdlPrd", "mdlOpt"))
+    arg_parser_sub.add_argument("--type", type=str, choices=("facNeu", "mdlPrd", "mdlOpt", "grpOpt"))
 
     # switch: evaluations
     arg_parser_sub = arg_parser_subs.add_parser(name="evaluations", help="evaluate simulations")
-    arg_parser_sub.add_argument("--type", type=str, choices=("facNeu", "mdlPrd", "mdlOpt"))
+    arg_parser_sub.add_argument("--type", type=str, choices=("facNeu", "mdlPrd", "mdlOpt", "grpOpt"))
 
     # switch: mclrn
     arg_parser_sub = arg_parser_subs.add_parser(name="mclrn", help="machine learning functions")
@@ -419,7 +419,7 @@ if __name__ == "__main__":
             neutralizer.main_neu(bgn_date=bgn_date, stp_date=stp_date, calendar=calendar)
     elif args.switch == "signals":
         if args.type == "facNeu":
-            from solutions.signals import main_signals_from_factor_neu
+            from solutions.signals import main_signals_from_factor_neu, main_signals_from_opt
 
             factors_neu = cfg_factors.get_factors_neu()
             main_signals_from_factor_neu(
@@ -455,7 +455,7 @@ if __name__ == "__main__":
         elif args.type == "mdlOpt":
             from solutions.mclrn_mdl_parser import load_config_models
             from solutions.shared import gen_model_tests, get_sim_args_mdl_prd, group_sim_args_by_factor_group
-            from solutions.signals import main_signals_from_mdl_opt
+            from solutions.signals import main_signals_from_opt
 
             factor_groups = cfg_factors.get_factor_groups(proj_cfg.factor_groups, "NEU")
             config_models = load_config_models(cfg_mdl_dir=proj_cfg.mclrn_dir, cfg_mdl_file=proj_cfg.mclrn_cfg_file)
@@ -467,11 +467,34 @@ if __name__ == "__main__":
                 cost=0
             )
             grouped_sim_args = group_sim_args_by_factor_group(sim_args_list)
-            main_signals_from_mdl_opt(
+            main_signals_from_opt(
                 grouped_sim_args=grouped_sim_args,
-                sig_frm_mdl_prd_dir=proj_cfg.sig_frm_mdl_prd_dir,
-                opt_frm_mdl_prd_dir=proj_cfg.opt_frm_mdl_prd_dir,
+                input_sig_dir=proj_cfg.sig_frm_mdl_prd_dir,
+                input_opt_dir=proj_cfg.opt_frm_mdl_prd_dir,
                 signal_save_dir=proj_cfg.sig_frm_mdl_opt_dir,
+                bgn_date=bgn_date,
+                stp_date=stp_date,
+                calendar=calendar,
+                call_multiprocess=not args.nomp,
+                processes=args.processes,
+            )
+        elif args.type == "grpOpt":
+            from solutions.shared import get_sim_args_mdl_opt, group_sim_args_by_ret_prc
+            from solutions.signals import main_signals_from_opt
+
+            sim_args_list = get_sim_args_mdl_opt(
+                factor_group_ids=list(proj_cfg.factor_groups),
+                rets=proj_cfg.get_raw_test_rets(),
+                signals_dir=proj_cfg.sig_frm_mdl_opt_dir,
+                ret_dir=proj_cfg.test_return_dir,
+                cost=0,
+            )
+            grouped_sim_args = group_sim_args_by_ret_prc(sim_args_list)
+            main_signals_from_opt(
+                grouped_sim_args=grouped_sim_args,
+                input_sig_dir=proj_cfg.sig_frm_mdl_opt_dir,
+                input_opt_dir=proj_cfg.opt_frm_mdl_opt_dir,
+                signal_save_dir=proj_cfg.sig_frm_grp_opt_dir,
                 bgn_date=bgn_date,
                 stp_date=stp_date,
                 calendar=calendar,

@@ -832,6 +832,9 @@ class CCfgProj:
     sim_frm_mdl_opt_dir: str
     evl_frm_mdl_opt_dir: str
     opt_frm_mdl_opt_dir: str
+    sig_frm_grp_opt_dir: str
+    sim_frm_grp_opt_dir: str
+    evl_frm_grp_opt_dir: str
 
     # --- project parameters
     universe: TUniverse

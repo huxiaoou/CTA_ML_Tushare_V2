@@ -2,11 +2,11 @@ import pandas as pd
 import multiprocessing as mp
 from itertools import product
 from rich.progress import Progress, track
-from husfort.qutility import check_and_makedirs, error_handler, qtimer
+from husfort.qutility import check_and_makedirs, error_handler
 from husfort.qsqlite import CMgrSqlDb
 from husfort.qcalendar import CCalendar
 from solutions.shared import gen_sig_db, gen_fac_neu_db, gen_prdct_db, gen_opt_wgt_db
-from typedef import CFactor, TFactors, TFactorNames, CSimArgs, TSimGrpIdByFacGrp
+from typedef import CFactor, TFactors, TFactorNames, CSimArgs, TSimGrpIdByFacGrp, TRetPrc
 from typedef import CTestMdl
 
 
@@ -290,16 +290,22 @@ def main_signals_from_mdl_prd(
 """
 
 
-class CSignalFromMdlOpt(_CSignal):
+class CSignalFromOpt(_CSignal):
     def __init__(
-            self, group_id: TSimGrpIdByFacGrp, sim_args_list: list[CSimArgs], sig_frm_mdl_prd_dir: str,
-            opt_frm_mdl_prd_dir: str,
+            self, group_id: TSimGrpIdByFacGrp | TRetPrc, sim_args_list: list[CSimArgs],
+            input_sig_dir: str,
+            input_opt_dir: str,
             signal_save_dir: str
     ):
-        signal_id = ".".join(group_id)
+        if isinstance(group_id, tuple):
+            signal_id = ".".join(group_id)
+        elif isinstance(group_id, str):
+            signal_id = group_id
+        else:
+            raise TypeError(f"type of {group_id} is {type(group_id)}, which is illegal")
         self.input_signal_ids: list[str] = [sim_args.sim_id for sim_args in sim_args_list]
-        self.sig_frm_mdl_prd_dir = sig_frm_mdl_prd_dir
-        self.opt_frm_mdl_prd_dir = opt_frm_mdl_prd_dir
+        self.input_sig_dir = input_sig_dir
+        self.input_opt_dir = input_opt_dir
         super().__init__(signal_save_dir=signal_save_dir, signal_id=signal_id)
 
     @property
@@ -308,7 +314,7 @@ class CSignalFromMdlOpt(_CSignal):
 
     def load_opt(self, bgn_date: str, stp_date: str) -> pd.DataFrame:
         db_struct_opt = gen_opt_wgt_db(
-            db_save_dir=self.opt_frm_mdl_prd_dir,
+            db_save_dir=self.input_opt_dir,
             save_id=self.signal_id,
             underlying_assets_names=self.underlying_assets_names,
         )
@@ -326,7 +332,7 @@ class CSignalFromMdlOpt(_CSignal):
         for input_signal_id in self.input_signal_ids:
             signal_id = ".".join(input_signal_id.split(".")[:-1])
             unique_id = input_signal_id.split(".")[0]
-            db_struct_sig = gen_sig_db(db_save_dir=self.sig_frm_mdl_prd_dir, signal_id=signal_id)
+            db_struct_sig = gen_sig_db(db_save_dir=self.input_sig_dir, signal_id=signal_id)
             sqldb = CMgrSqlDb(
                 db_save_dir=db_struct_sig.db_save_dir,
                 db_name=db_struct_sig.db_name,
@@ -349,33 +355,32 @@ class CSignalFromMdlOpt(_CSignal):
         return optimized_data
 
     def core(self, input_data: pd.DataFrame, bgn_date: str, stp_date: str, calendar: CCalendar) -> pd.DataFrame:
-        sorted_data = input_data.sort_values(by="trade_date", ascending=True)
+        sorted_data = input_data.sort_values(by="trade_date", ascending=True).fillna(0)
         opt_data = self.load_opt(bgn_date, stp_date)
         signal_data = self.apply_opt(sorted_data, opt_data)
         return signal_data
 
 
-def process_for_signal_from_mdl_opt(
-        group_id: TSimGrpIdByFacGrp,
+def process_for_signal_from_opt(
+        group_id: TSimGrpIdByFacGrp | TRetPrc,
         sim_args_list: list[CSimArgs],
-        sig_frm_mdl_prd_dir: str,
-        opt_frm_mdl_prd_dir: str,
+        input_sig_dir: str,
+        input_opt_dir: str,
         signal_save_dir: str,
         bgn_date: str, stp_date: str, calendar: CCalendar,
 ):
-    signal = CSignalFromMdlOpt(
-        group_id=group_id, sim_args_list=sim_args_list, sig_frm_mdl_prd_dir=sig_frm_mdl_prd_dir,
-        opt_frm_mdl_prd_dir=opt_frm_mdl_prd_dir, signal_save_dir=signal_save_dir,
+    signal = CSignalFromOpt(
+        group_id=group_id, sim_args_list=sim_args_list, input_sig_dir=input_sig_dir,
+        input_opt_dir=input_opt_dir, signal_save_dir=signal_save_dir,
     )
     signal.main(bgn_date, stp_date, calendar)
     return 0
 
 
-@qtimer
-def main_signals_from_mdl_opt(
-        grouped_sim_args: dict[TSimGrpIdByFacGrp, list[CSimArgs]],
-        sig_frm_mdl_prd_dir: str,
-        opt_frm_mdl_prd_dir: str,
+def main_signals_from_opt(
+        grouped_sim_args: dict[TSimGrpIdByFacGrp | TRetPrc, list[CSimArgs]],
+        input_sig_dir: str,
+        input_opt_dir: str,
         signal_save_dir: str,
         bgn_date: str,
         stp_date: str,
@@ -390,12 +395,12 @@ def main_signals_from_mdl_opt(
             with mp.get_context("spawn").Pool(processes) as pool:
                 for group_id, sim_args_list in grouped_sim_args.items():
                     pool.apply_async(
-                        process_for_signal_from_mdl_opt,
+                        process_for_signal_from_opt,
                         kwds={
                             "group_id": group_id,
                             "sim_args_list": sim_args_list,
-                            "sig_frm_mdl_prd_dir": sig_frm_mdl_prd_dir,
-                            "opt_frm_mdl_prd_dir": opt_frm_mdl_prd_dir,
+                            "input_sig_dir": input_sig_dir,
+                            "input_opt_dir": input_opt_dir,
                             "signal_save_dir": signal_save_dir,
                             "bgn_date": bgn_date,
                             "stp_date": stp_date,
@@ -408,11 +413,11 @@ def main_signals_from_mdl_opt(
                 pool.join()
     else:
         for group_id, sim_args_list in track(grouped_sim_args.items(), description=desc):
-            process_for_signal_from_mdl_opt(
+            process_for_signal_from_opt(
                 group_id=group_id,
                 sim_args_list=sim_args_list,
-                sig_frm_mdl_prd_dir=sig_frm_mdl_prd_dir,
-                opt_frm_mdl_prd_dir=opt_frm_mdl_prd_dir,
+                input_sig_dir=input_sig_dir,
+                input_opt_dir=input_opt_dir,
                 signal_save_dir=signal_save_dir,
                 bgn_date=bgn_date,
                 stp_date=stp_date,

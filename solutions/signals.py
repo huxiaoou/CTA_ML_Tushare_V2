@@ -2,11 +2,11 @@ import pandas as pd
 import multiprocessing as mp
 from itertools import product
 from rich.progress import Progress, track
-from husfort.qutility import check_and_makedirs, error_handler
+from husfort.qutility import check_and_makedirs, error_handler, qtimer
 from husfort.qsqlite import CMgrSqlDb
 from husfort.qcalendar import CCalendar
-from solutions.shared import gen_sig_db, gen_fac_neu_db, gen_prdct_db
-from typedef import CFactor, TFactors, TFactorNames
+from solutions.shared import gen_sig_db, gen_fac_neu_db, gen_prdct_db, gen_opt_wgt_db
+from typedef import CFactor, TFactors, TFactorNames, CSimArgs, TSimGrpIdByFacGrp
 from typedef import CTestMdl
 
 
@@ -55,6 +55,12 @@ class _CSignal:
     def map_factor_to_signal(data: pd.DataFrame) -> pd.DataFrame:
         n = len(data)
         data["weight"] = [1] * int(n / 2) + [0] * (n % 2) + [-1] * int(n / 2)
+        if (abs_sum := data["weight"].abs().sum()) > 0:
+            data["weight"] = data["weight"] / abs_sum
+        return data[["trade_date", "instrument", "weight"]]
+
+    @staticmethod
+    def norm_scale(data: pd.DataFrame) -> pd.DataFrame:
         if (abs_sum := data["weight"].abs().sum()) > 0:
             data["weight"] = data["weight"] / abs_sum
         return data[["trade_date", "instrument", "weight"]]
@@ -269,6 +275,144 @@ def main_signals_from_mdl_prd(
             process_for_signal_from_mdl_prd(
                 test=test,
                 mclrn_prd_dir=mclrn_prd_dir,
+                signal_save_dir=signal_save_dir,
+                bgn_date=bgn_date,
+                stp_date=stp_date,
+                calendar=calendar,
+            )
+    return 0
+
+
+"""
+---------------------------------------
+--- signals from model optimization ---
+---------------------------------------
+"""
+
+
+class CSignalFromMdlOpt(_CSignal):
+    def __init__(
+            self, group_id: TSimGrpIdByFacGrp, sim_args_list: list[CSimArgs], sig_frm_mdl_prd_dir: str,
+            opt_frm_mdl_prd_dir: str,
+            signal_save_dir: str
+    ):
+        signal_id = ".".join(group_id)
+        self.input_signal_ids: list[str] = [sim_args.sim_id for sim_args in sim_args_list]
+        self.sig_frm_mdl_prd_dir = sig_frm_mdl_prd_dir
+        self.opt_frm_mdl_prd_dir = opt_frm_mdl_prd_dir
+        super().__init__(signal_save_dir=signal_save_dir, signal_id=signal_id)
+
+    @property
+    def underlying_assets_names(self) -> list[str]:
+        return [input_signal_id.split(".")[0] for input_signal_id in self.input_signal_ids]
+
+    def load_opt(self, bgn_date: str, stp_date: str) -> pd.DataFrame:
+        db_struct_opt = gen_opt_wgt_db(
+            db_save_dir=self.opt_frm_mdl_prd_dir,
+            save_id=self.signal_id,
+            underlying_assets_names=self.underlying_assets_names,
+        )
+        sqldb = CMgrSqlDb(
+            db_save_dir=db_struct_opt.db_save_dir,
+            db_name=db_struct_opt.db_name,
+            table=db_struct_opt.table,
+            mode="a",
+        )
+        data = sqldb.read_by_range(bgn_date=bgn_date, stp_date=stp_date)
+        return data.set_index("trade_date")
+
+    def load_input(self, bgn_date: str, stp_date: str, calendar: CCalendar) -> pd.DataFrame:
+        input_data = {}
+        for input_signal_id in self.input_signal_ids:
+            signal_id = ".".join(input_signal_id.split(".")[:-1])
+            unique_id = input_signal_id.split(".")[0]
+            db_struct_sig = gen_sig_db(db_save_dir=self.sig_frm_mdl_prd_dir, signal_id=signal_id)
+            sqldb = CMgrSqlDb(
+                db_save_dir=db_struct_sig.db_save_dir,
+                db_name=db_struct_sig.db_name,
+                table=db_struct_sig.table,
+                mode="r",
+            )
+            data = sqldb.read_by_range(bgn_date=bgn_date, stp_date=stp_date)
+            input_data[unique_id] = data.set_index(["trade_date", "instrument"])["weight"]
+        return pd.DataFrame(input_data)
+
+    @staticmethod
+    def apply_opt(sorted_data: pd.DataFrame, opt_data: pd.DataFrame) -> pd.DataFrame:
+        res = []
+        for trade_date, trade_date_data in sorted_data.groupby(by="trade_date"):
+            srs = trade_date_data @ opt_data.loc[trade_date]
+            if (abs_sum := srs.abs().sum()) > 0:
+                srs = srs / abs_sum
+            res.append(srs)
+        optimized_data = pd.concat(res).reset_index().rename(columns={0: "weight"})
+        return optimized_data
+
+    def core(self, input_data: pd.DataFrame, bgn_date: str, stp_date: str, calendar: CCalendar) -> pd.DataFrame:
+        sorted_data = input_data.sort_values(by="trade_date", ascending=True)
+        opt_data = self.load_opt(bgn_date, stp_date)
+        signal_data = self.apply_opt(sorted_data, opt_data)
+        return signal_data
+
+
+def process_for_signal_from_mdl_opt(
+        group_id: TSimGrpIdByFacGrp,
+        sim_args_list: list[CSimArgs],
+        sig_frm_mdl_prd_dir: str,
+        opt_frm_mdl_prd_dir: str,
+        signal_save_dir: str,
+        bgn_date: str, stp_date: str, calendar: CCalendar,
+):
+    signal = CSignalFromMdlOpt(
+        group_id=group_id, sim_args_list=sim_args_list, sig_frm_mdl_prd_dir=sig_frm_mdl_prd_dir,
+        opt_frm_mdl_prd_dir=opt_frm_mdl_prd_dir, signal_save_dir=signal_save_dir,
+    )
+    signal.main(bgn_date, stp_date, calendar)
+    return 0
+
+
+@qtimer
+def main_signals_from_mdl_opt(
+        grouped_sim_args: dict[TSimGrpIdByFacGrp, list[CSimArgs]],
+        sig_frm_mdl_prd_dir: str,
+        opt_frm_mdl_prd_dir: str,
+        signal_save_dir: str,
+        bgn_date: str,
+        stp_date: str,
+        calendar: CCalendar,
+        call_multiprocess: bool,
+        processes: int,
+):
+    desc = "Translating optimized models to signals"
+    if call_multiprocess:
+        with Progress() as pb:
+            main_task = pb.add_task(description=desc, total=len(grouped_sim_args))
+            with mp.get_context("spawn").Pool(processes) as pool:
+                for group_id, sim_args_list in grouped_sim_args.items():
+                    pool.apply_async(
+                        process_for_signal_from_mdl_opt,
+                        kwds={
+                            "group_id": group_id,
+                            "sim_args_list": sim_args_list,
+                            "sig_frm_mdl_prd_dir": sig_frm_mdl_prd_dir,
+                            "opt_frm_mdl_prd_dir": opt_frm_mdl_prd_dir,
+                            "signal_save_dir": signal_save_dir,
+                            "bgn_date": bgn_date,
+                            "stp_date": stp_date,
+                            "calendar": calendar,
+                        },
+                        callback=lambda _: pb.update(main_task, advance=1),
+                        error_callback=error_handler,
+                    )
+                pool.close()
+                pool.join()
+    else:
+        for group_id, sim_args_list in track(grouped_sim_args.items(), description=desc):
+            process_for_signal_from_mdl_opt(
+                group_id=group_id,
+                sim_args_list=sim_args_list,
+                sig_frm_mdl_prd_dir=sig_frm_mdl_prd_dir,
+                opt_frm_mdl_prd_dir=opt_frm_mdl_prd_dir,
                 signal_save_dir=signal_save_dir,
                 bgn_date=bgn_date,
                 stp_date=stp_date,

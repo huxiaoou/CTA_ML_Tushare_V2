@@ -61,3 +61,8 @@ python main.py --bgn $bgn_date_sim --stp $stp_date evaluations --type mdlPrd
 
 # --- optimize machine learning
 python main.py --bgn 20180601 --stp $stp_date optimize --type mdlPrd
+
+# --- optimized model signals, simulations and evaluations
+python main.py --bgn 20180601 --stp $stp_date signals --type mdlOpt
+python main.py --bgn 20180601 --stp $stp_date simulations --type mdlOpt
+python main.py --bgn 20180601 --stp $stp_date evaluations --type mdlOpt

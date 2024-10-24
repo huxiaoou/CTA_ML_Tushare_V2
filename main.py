@@ -478,7 +478,6 @@ if __name__ == "__main__":
                 call_multiprocess=not args.nomp,
                 processes=args.processes,
             )
-
         else:
             raise ValueError(f"args.type == {args.type} is illegal")
     elif args.switch == "simulations":
@@ -520,6 +519,25 @@ if __name__ == "__main__":
             main_simulations(
                 sim_args_list=sim_args_list,
                 sim_save_dir=proj_cfg.sim_frm_mdl_prd_dir,
+                bgn_date=bgn_date,
+                stp_date=stp_date,
+                calendar=calendar,
+                call_multiprocess=not args.nomp,
+                processes=args.processes,
+            )
+        elif args.type == "mdlOpt":
+            from solutions.shared import get_sim_args_mdl_opt
+
+            sim_args_list = get_sim_args_mdl_opt(
+                factor_group_ids=list(proj_cfg.factor_groups),
+                rets=proj_cfg.get_raw_test_rets(),
+                signals_dir=proj_cfg.sig_frm_mdl_opt_dir,
+                ret_dir=proj_cfg.test_return_dir,
+                cost=0,
+            )
+            main_simulations(
+                sim_args_list=sim_args_list,
+                sim_save_dir=proj_cfg.sim_frm_mdl_opt_dir,
                 bgn_date=bgn_date,
                 stp_date=stp_date,
                 calendar=calendar,

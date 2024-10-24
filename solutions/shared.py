@@ -4,7 +4,7 @@ import scipy.stats as sps
 import itertools as ittl
 from rich.progress import Progress
 from husfort.qsqlite import CDbStruct, CSqlTable, CSqlVar
-from typedef import TFactorClass, TFactorName, TFactorNames, TFactors, CSimArgs, TRets, TUniqueId, TGroupId
+from typedef import TFactorClass, TFactorName, TFactorNames, TFactors, CSimArgs, TRets, TUniqueId, TGroupId, TRetPrc
 from typedef import TSimGrpIdByFacNeu, TSimGrpIdByFacGrp
 from typedef import CTestMdl, CRet, CModel, TFactorGroups
 
@@ -297,6 +297,17 @@ def group_sim_args_by_factor_group(sim_args_list: list[CSimArgs]) -> dict[TSimGr
     for sim_args in sim_args_list:
         unique_id, prd_ret, factor_group, trn_win, model, maw, tgt_ret = sim_args.sim_id.split(".")
         key = TSimGrpIdByFacGrp((factor_group, prd_ret[0:3]))
+        if key not in res:
+            res[key] = []
+        res[key].append(sim_args)
+    return res
+
+
+def group_sim_args_by_ret_prc(sim_args_list: list[CSimArgs]) -> dict[TRetPrc, list[CSimArgs]]:
+    res: dict[TRetPrc, list[CSimArgs]] = {}
+    for sim_args in sim_args_list:
+        factor_group, ret_prc, tgt_ret = sim_args.sim_id.split(".")
+        key = ret_prc
         if key not in res:
             res[key] = []
         res[key].append(sim_args)

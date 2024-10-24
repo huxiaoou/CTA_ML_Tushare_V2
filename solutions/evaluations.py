@@ -1,14 +1,13 @@
 import os
 import multiprocessing as mp
-import numpy as np
 import pandas as pd
 from rich.progress import track, Progress
-from husfort.qutility import error_handler, check_and_makedirs, SFG
+from husfort.qutility import error_handler, check_and_makedirs
 from husfort.qevaluation import CNAV
 from husfort.qsqlite import CMgrSqlDb, CDbStruct
 from husfort.qplot import CPlotLines
 from solutions.shared import gen_nav_db
-from typedef import CSimArgs, TSimGrpIdByFacNeu, TSimGrpIdByFacGrp
+from typedef import CSimArgs, TSimGrpIdByFacNeu, TSimGrpIdByFacGrp, TRetPrc
 
 
 class CEvl:
@@ -93,6 +92,22 @@ class CEvlMdlPrd(CEvlFrmSim):
         return 0
 
 
+class CEvlMdlOpt(CEvlFrmSim):
+    """
+    --- evaluations for machine learning models ---
+    """
+
+    def add_arguments(self, res: dict):
+        factor_group, ret_prc, tgt_ret = self.sim_args.sim_id.split(".")
+        other_arguments = {
+            "factor_group": factor_group,
+            "ret_prc": ret_prc,
+            "tgt_ret": tgt_ret,
+        }
+        res.update(other_arguments)
+        return 0
+
+
 def process_for_evl_frm_sim(
         sim_type: str,
         sim_args: CSimArgs,
@@ -104,6 +119,8 @@ def process_for_evl_frm_sim(
         s = CEvlFacNeu(sim_args, sim_save_dir=sim_save_dir)
     elif sim_type == "mdlPrd":
         s = CEvlMdlPrd(sim_args, sim_save_dir=sim_save_dir)
+    elif sim_type == "mdlOpt":
+        s = CEvlMdlOpt(sim_args, sim_save_dir=sim_save_dir)
     else:
         raise ValueError(f"sim type = {sim_type} is illegal")
     return s.main(bgn_date, stp_date)
@@ -176,7 +193,7 @@ def plot_sim_args_list(
 ):
     ret_data_by_sim = {}
     for sim_args in sim_args_list:
-        s = CEvlFacNeu(sim_args, sim_save_dir)
+        s = CEvlFrmSim(sim_args, sim_save_dir)
         ret_data_by_sim[sim_args.sim_id] = s.get_ret(bgn_date, stp_date)
     ret_data = pd.DataFrame(ret_data_by_sim)
     nav_data = (1 + ret_data).cumprod()
@@ -194,7 +211,7 @@ def plot_sim_args_list(
 
 
 def main_plt_grouped_sim_args(
-        grouped_sim_args: dict[TSimGrpIdByFacNeu | TSimGrpIdByFacGrp, list[CSimArgs]],
+        grouped_sim_args: dict[TSimGrpIdByFacNeu | TSimGrpIdByFacGrp | TRetPrc, list[CSimArgs]],
         sim_save_dir: str,
         plt_save_dir: str,
         bgn_date: str,
@@ -202,7 +219,12 @@ def main_plt_grouped_sim_args(
 ):
     check_and_makedirs(plt_save_dir)
     for grp_id, sim_args_list in track(grouped_sim_args.items(), description="Plot by group id"):
-        fig_name = "-".join(grp_id)
+        if isinstance(grp_id, tuple):
+            fig_name = "-".join(grp_id)
+        elif isinstance(grp_id, str):
+            fig_name = grp_id
+        else:
+            raise TypeError(f"type of {grp_id} = {type(grp_id)}, is illegal")
         plot_sim_args_list(
             fig_name=fig_name,
             sim_args_list=sim_args_list,

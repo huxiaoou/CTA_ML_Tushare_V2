@@ -588,7 +588,7 @@ if __name__ == "__main__":
         else:
             raise ValueError(f"args.type == {args.type} is illegal")
     elif args.switch == "evaluations":
-        from solutions.evaluations import main_evl_sims, main_plt_grouped_sim_args
+        from solutions.evaluations import main_evl_sims, main_plt_grouped_sim_args, plot_sim_args_list
 
         if args.type == "facNeu":
             from solutions.shared import get_sim_args_fac_neu, group_sim_args_by_factor_class
@@ -684,6 +684,35 @@ if __name__ == "__main__":
                 grouped_sim_args=grouped_sim_args,
                 sim_save_dir=proj_cfg.sim_frm_mdl_opt_dir,
                 plt_save_dir=os.path.join(proj_cfg.evl_frm_mdl_opt_dir, "plot-nav"),
+                bgn_date=bgn_date, stp_date=stp_date,
+            )
+        elif args.type == "grpOpt":
+            from solutions.shared import get_sim_args_grp_opt
+
+            sim_args_list = get_sim_args_grp_opt(
+                rets=proj_cfg.get_raw_test_rets(),
+                signals_dir=proj_cfg.sig_frm_grp_opt_dir,
+                ret_dir=proj_cfg.test_return_dir,
+                cost=proj_cfg.const.COST,
+            )
+            main_evl_sims(
+                sim_type=args.type,
+                sim_args_list=sim_args_list,
+                sim_save_dir=proj_cfg.sim_frm_grp_opt_dir,
+                evl_save_dir=proj_cfg.evl_frm_grp_opt_dir,
+                evl_save_file="evaluations_for_grp_opt.csv.gz",
+                header_vars=["sharpe+calmar", "sharpe", "calmar"],
+                sort_vars=["sharpe+calmar"],
+                bgn_date=bgn_date,
+                stp_date=stp_date,
+                call_multiprocess=not args.nomp,
+                processes=args.processes,
+            )
+            plot_sim_args_list(
+                fig_name="Cls.Opn",
+                sim_args_list=sim_args_list,
+                sim_save_dir=proj_cfg.sim_frm_grp_opt_dir,
+                plt_save_dir=os.path.join(proj_cfg.evl_frm_grp_opt_dir, "plot-nav"),
                 bgn_date=bgn_date, stp_date=stp_date,
             )
         else:

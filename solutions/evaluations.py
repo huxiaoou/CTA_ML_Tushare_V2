@@ -94,13 +94,28 @@ class CEvlMdlPrd(CEvlFrmSim):
 
 class CEvlMdlOpt(CEvlFrmSim):
     """
-    --- evaluations for machine learning models ---
+    --- evaluations for factor group ---
     """
 
     def add_arguments(self, res: dict):
         factor_group, ret_prc, tgt_ret = self.sim_args.sim_id.split(".")
         other_arguments = {
             "factor_group": factor_group,
+            "ret_prc": ret_prc,
+            "tgt_ret": tgt_ret,
+        }
+        res.update(other_arguments)
+        return 0
+
+
+class CEvlGrpOpt(CEvlFrmSim):
+    """
+    --- evaluations for price type ---
+    """
+
+    def add_arguments(self, res: dict):
+        ret_prc, tgt_ret = self.sim_args.sim_id.split(".")
+        other_arguments = {
             "ret_prc": ret_prc,
             "tgt_ret": tgt_ret,
         }
@@ -121,6 +136,8 @@ def process_for_evl_frm_sim(
         s = CEvlMdlPrd(sim_args, sim_save_dir=sim_save_dir)
     elif sim_type == "mdlOpt":
         s = CEvlMdlOpt(sim_args, sim_save_dir=sim_save_dir)
+    elif sim_type == "grpOpt":
+        s = CEvlGrpOpt(sim_args, sim_save_dir=sim_save_dir)
     else:
         raise ValueError(f"sim type = {sim_type} is illegal")
     return s.main(bgn_date, stp_date)
@@ -191,6 +208,7 @@ def plot_sim_args_list(
         sim_save_dir: str, plt_save_dir: str,
         bgn_date: str, stp_date: str,
 ):
+    check_and_makedirs(plt_save_dir)
     ret_data_by_sim = {}
     for sim_args in sim_args_list:
         s = CEvlFrmSim(sim_args, sim_save_dir)
@@ -217,7 +235,6 @@ def main_plt_grouped_sim_args(
         bgn_date: str,
         stp_date: str,
 ):
-    check_and_makedirs(plt_save_dir)
     for grp_id, sim_args_list in track(grouped_sim_args.items(), description="Plot by group id"):
         if isinstance(grp_id, tuple):
             fig_name = "-".join(grp_id)

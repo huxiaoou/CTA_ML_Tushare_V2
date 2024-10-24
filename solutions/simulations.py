@@ -1,7 +1,7 @@
 import multiprocessing as mp
 import pandas as pd
 from rich.progress import track, Progress
-from husfort.qutility import qtimer, error_handler, check_and_makedirs
+from husfort.qutility import error_handler, check_and_makedirs
 from husfort.qcalendar import CCalendar
 from husfort.qsqlite import CMgrSqlDb
 from solutions.shared import gen_nav_db
@@ -127,7 +127,6 @@ def process_for_sim(
     return 0
 
 
-@qtimer
 def main_simulations(
         sim_args_list: list[CSimArgs],
         sim_save_dir: str,

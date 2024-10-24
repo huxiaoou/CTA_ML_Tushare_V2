@@ -292,6 +292,22 @@ def get_sim_args_mdl_opt(
     return res
 
 
+def get_sim_args_grp_opt(rets: TRets, signals_dir: str, ret_dir: str, cost: float) -> list[CSimArgs]:
+    res: list[CSimArgs] = []
+    for ret in rets:
+        signal_id = ret.ret_prc
+        ret_names = [ret.ret_name]
+        sim_args = CSimArgs(
+            sim_id=f"{signal_id}.{ret.ret_name}",
+            tgt_ret=ret,
+            db_struct_sig=gen_sig_db(db_save_dir=signals_dir, signal_id=signal_id),
+            db_struct_ret=gen_tst_ret_raw_db(db_save_root_dir=ret_dir, save_id=ret.save_id, rets=ret_names),
+            cost=cost,
+        )
+        res.append(sim_args)
+    return res
+
+
 def group_sim_args_by_factor_group(sim_args_list: list[CSimArgs]) -> dict[TSimGrpIdByFacGrp, list[CSimArgs]]:
     res: dict[TSimGrpIdByFacGrp, list[CSimArgs]] = {}
     for sim_args in sim_args_list:

@@ -54,15 +54,14 @@ python main.py --bgn $bgn_date_sim --stp $stp_date evaluations --type facNeu
 python main.py --bgn $bgn_date_ml --stp $stp_date mclrn --type parse
 python main.py --bgn $bgn_date_ml --stp $stp_date --processes 12 mclrn --type trnprd
 
-# --- machine learning predciton test
+# --- calculate signals, simulations and optimization for each machine learning models
 python main.py --bgn $bgn_date_sig --stp $stp_date signals --type mdlPrd
 python main.py --bgn $bgn_date_sim --stp $stp_date simulations --type mdlPrd
 python main.py --bgn $bgn_date_sim --stp $stp_date evaluations --type mdlPrd
+python main.py --bgn 20180601 --stp $stp_date optimize --type mdlPrd # give weights for each (trn_win, prd_win)
 
-# --- optimize machine learning
-python main.py --bgn 20180601 --stp $stp_date optimize --type mdlPrd
-
-# --- optimized model signals, simulations and evaluations
+# --- calculate signals, simulations and optimization for each factor group
 python main.py --bgn 20180601 --stp $stp_date signals --type mdlOpt
 python main.py --bgn 20180601 --stp $stp_date simulations --type mdlOpt
 python main.py --bgn 20180601 --stp $stp_date evaluations --type mdlOpt
+python main.py --bgn 20180601 --stp $stp_date optimize --type mdlOpt # give weights for each factor_group

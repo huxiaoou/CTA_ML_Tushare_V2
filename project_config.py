@@ -106,6 +106,8 @@ proj_cfg = CCfgProj(
         _config["path"]["project_root_dir"], _config["path"]["sim_frm_mdl_opt_dir"]),
     evl_frm_mdl_opt_dir=os.path.join(  # type:ignore
         _config["path"]["project_root_dir"], _config["path"]["evl_frm_mdl_opt_dir"]),
+    opt_frm_mdl_opt_dir=os.path.join(  # type:ignore
+        _config["path"]["project_root_dir"], _config["path"]["opt_frm_mdl_opt_dir"]),
 )
 
 # ---------- databases structure ----------

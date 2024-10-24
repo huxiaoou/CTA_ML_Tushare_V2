@@ -31,6 +31,7 @@ path:
   sig_frm_mdl_opt_dir: sig_frm_mdl_opt
   sim_frm_mdl_opt_dir: sim_frm_mdl_opt
   evl_frm_mdl_opt_dir: evl_frm_mdl_opt
+  opt_frm_mdl_opt_dir: opt_frm_mdl_opt
 
 
 mkt_idxes:

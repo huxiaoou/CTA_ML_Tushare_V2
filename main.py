@@ -60,7 +60,7 @@ def parse_args():
 
     # switch: optimize
     arg_parser_sub = arg_parser_subs.add_parser(name="optimize", help="optimize portfolio and signals")
-    arg_parser_sub.add_argument("--type", type=str, choices=("mdlPrd",))
+    arg_parser_sub.add_argument("--type", type=str, choices=("mdlPrd", "mdlOpt"))
 
     return arg_parser.parse_args()
 
@@ -686,10 +686,11 @@ if __name__ == "__main__":
         else:
             raise ValueError(f"args.type == {args.type} is illegal")
     elif args.switch == "optimize":
+        from solutions.optimize import main_optimize
+
         if args.type == "mdlPrd":
             from solutions.mclrn_mdl_parser import load_config_models
             from solutions.shared import gen_model_tests, get_sim_args_mdl_prd, group_sim_args_by_factor_group
-            from solutions.optimize import main_optimize_mdl_prd
 
             factor_groups = cfg_factors.get_factor_groups(proj_cfg.factor_groups, "NEU")
             config_models = load_config_models(cfg_mdl_dir=proj_cfg.mclrn_dir, cfg_mdl_file=proj_cfg.mclrn_cfg_file)
@@ -701,11 +702,29 @@ if __name__ == "__main__":
                 cost=0
             )
             grouped_sim_args = group_sim_args_by_factor_group(sim_args_list)
-            main_optimize_mdl_prd(
+            main_optimize(
                 grouped_sim_args=grouped_sim_args,
                 sim_save_dir=proj_cfg.sim_frm_mdl_prd_dir,
                 win=proj_cfg.optimize["win"],
                 save_dir=proj_cfg.opt_frm_mdl_prd_dir,
+                bgn_date=bgn_date, stp_date=stp_date, calendar=calendar,
+            )
+        elif args.type == "mdlOpt":
+            from solutions.shared import get_sim_args_mdl_opt, group_sim_args_by_ret_prc
+
+            sim_args_list = get_sim_args_mdl_opt(
+                factor_group_ids=list(proj_cfg.factor_groups),
+                rets=proj_cfg.get_raw_test_rets(),
+                signals_dir=proj_cfg.sig_frm_mdl_opt_dir,
+                ret_dir=proj_cfg.test_return_dir,
+                cost=0,
+            )
+            grouped_sim_args = group_sim_args_by_ret_prc(sim_args_list)
+            main_optimize(
+                grouped_sim_args=grouped_sim_args,
+                sim_save_dir=proj_cfg.sim_frm_mdl_opt_dir,
+                win=proj_cfg.optimize["win"],
+                save_dir=proj_cfg.opt_frm_mdl_opt_dir,
                 bgn_date=bgn_date, stp_date=stp_date, calendar=calendar,
             )
         else:

@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import multiprocessing as mp
 from rich.progress import track, Progress
-from husfort.qutility import SFY, error_handler, check_and_makedirs, qtimer
+from husfort.qutility import SFY, error_handler, check_and_makedirs
 from husfort.qsqlite import CDbStruct, CMgrSqlDb
 from husfort.qcalendar import CCalendar
 from typedef import TFactorClass, TFactorNames, TUniverse, TFactorName
@@ -175,7 +175,6 @@ class CFactorRaw(CFactorGeneric):
         self.save_raw_by_instru(factor_data, instru, calendar)
         return 0
 
-    @qtimer
     def main_raw(self, bgn_date: str, stp_date: str, calendar: CCalendar, call_multiprocess: bool, processes: int):
         description = f"Calculating factor {SFY(self.factor_class)}"
         if call_multiprocess:
@@ -193,7 +192,6 @@ class CFactorRaw(CFactorGeneric):
                     pool.join()
         else:
             for instru in track(self.universe, description=description):
-                # for instru in self.universe:
                 self.process_by_instru(instru, bgn_date, stp_date, calendar)
         return 0
 

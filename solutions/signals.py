@@ -249,7 +249,7 @@ def main_signals_from_mdl_prd(
         call_multiprocess: bool,
         processes: int,
 ):
-    desc = "Translating neutralized factors to signals"
+    desc = "Translating machine learning model predictions to signals"
     if call_multiprocess:
         with Progress() as pb:
             main_task = pb.add_task(description=desc, total=len(tests))

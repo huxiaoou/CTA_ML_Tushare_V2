@@ -1,8 +1,11 @@
 $bgn_date = "20120104"
-$bgn_date_ml = "20170201" # machine learning bgn date
 $bgn_date_sig = "20170703" # signal bgn date
 $bgn_date_sim = "20180102" # simulation bgn date
 $stp_date = "20241008"
+
+$bgn_date_ml = "20170201" # machine learning bgn date
+$bgn_date_mdl_prd = "20170301"
+$bgn_date_mdl_opt = "20170405"
 
 # ------------------------
 # --- remove existence ---
@@ -55,18 +58,18 @@ python main.py --bgn $bgn_date_ml --stp $stp_date mclrn --type parse
 python main.py --bgn $bgn_date_ml --stp $stp_date --processes 12 mclrn --type trnprd
 
 # --- calculate signals, simulations and optimization for each machine learning models
-python main.py --bgn $bgn_date_sig --stp $stp_date signals --type mdlPrd
-python main.py --bgn $bgn_date_sim --stp $stp_date simulations --type mdlPrd
-python main.py --bgn $bgn_date_sim --stp $stp_date evaluations --type mdlPrd
-python main.py --bgn 20180601 --stp $stp_date optimize --type mdlPrd # give weights for each (trn_win, prd_win)
+python main.py --bgn $bgn_date_mdl_prd --stp $stp_date signals --type mdlPrd
+python main.py --bgn $bgn_date_mdl_prd --stp $stp_date simulations --type mdlPrd
+python main.py --bgn $bgn_date_mdl_prd --stp $stp_date evaluations --type mdlPrd
+python main.py --bgn $bgn_date_mdl_prd --stp $stp_date optimize --type mdlPrd # give weights for each (trn_win, prd_win)
 
 # --- calculate signals, simulations and optimization for each factor group
-python main.py --bgn 20180601 --stp $stp_date signals --type mdlOpt
-python main.py --bgn 20180601 --stp $stp_date simulations --type mdlOpt
-python main.py --bgn 20180601 --stp $stp_date evaluations --type mdlOpt
-python main.py --bgn 20180601 --stp $stp_date optimize --type mdlOpt # give weights for each factor_group
+python main.py --bgn $bgn_date_mdl_opt --stp $stp_date signals --type mdlOpt
+python main.py --bgn $bgn_date_mdl_opt --stp $stp_date simulations --type mdlOpt
+python main.py --bgn $bgn_date_mdl_opt --stp $stp_date evaluations --type mdlOpt
+python main.py --bgn $bgn_date_mdl_opt --stp $stp_date optimize --type mdlOpt # give weights for each factor_group
 
 # --- calculate signals, simulations and optimization for each price type
-python main.py --bgn 20180702 --stp $stp_date signals --type grpOpt
-python main.py --bgn 20180702 --stp $stp_date simulations --type grpOpt
-python main.py --bgn 20180702 --stp $stp_date evaluations --type grpOpt
+python main.py --bgn $bgn_date_sim --stp $stp_date signals --type grpOpt
+python main.py --bgn $bgn_date_sim --stp $stp_date simulations --type grpOpt
+python main.py --bgn $bgn_date_sim --stp $stp_date evaluations --type grpOpt

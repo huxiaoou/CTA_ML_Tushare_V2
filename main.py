@@ -464,7 +464,7 @@ if __name__ == "__main__":
                 tests=test_mdls,
                 signals_dir=proj_cfg.sig_frm_mdl_prd_dir,
                 ret_dir=proj_cfg.test_return_dir,
-                cost=0
+                cost=proj_cfg.const.COST_SUB,
             )
             grouped_sim_args = group_sim_args_by_factor_group(sim_args_list)
             main_signals_from_opt(
@@ -487,7 +487,7 @@ if __name__ == "__main__":
                 rets=proj_cfg.get_raw_test_rets(),
                 signals_dir=proj_cfg.sig_frm_mdl_opt_dir,
                 ret_dir=proj_cfg.test_return_dir,
-                cost=0,
+                cost=proj_cfg.const.COST_SUB,
             )
             grouped_sim_args = group_sim_args_by_ret_prc(sim_args_list)
             main_signals_from_opt(
@@ -515,7 +515,7 @@ if __name__ == "__main__":
                 rets=proj_cfg.get_raw_test_rets(),
                 signals_dir=proj_cfg.sig_frm_fac_neu_dir,
                 ret_dir=proj_cfg.test_return_dir,
-                cost=0,
+                cost=proj_cfg.const.COST_SUB,
             )
             main_simulations(
                 sim_args_list=sim_args_list,
@@ -537,7 +537,7 @@ if __name__ == "__main__":
                 tests=test_mdls,
                 signals_dir=proj_cfg.sig_frm_mdl_prd_dir,
                 ret_dir=proj_cfg.test_return_dir,
-                cost=0,
+                cost=proj_cfg.const.COST_SUB,
             )
             main_simulations(
                 sim_args_list=sim_args_list,
@@ -556,7 +556,7 @@ if __name__ == "__main__":
                 rets=proj_cfg.get_raw_test_rets(),
                 signals_dir=proj_cfg.sig_frm_mdl_opt_dir,
                 ret_dir=proj_cfg.test_return_dir,
-                cost=0,
+                cost=proj_cfg.const.COST_SUB,
             )
             main_simulations(
                 sim_args_list=sim_args_list,
@@ -599,7 +599,7 @@ if __name__ == "__main__":
                 rets=proj_cfg.get_raw_test_rets(),
                 signals_dir=proj_cfg.sig_frm_fac_neu_dir,
                 ret_dir=proj_cfg.test_return_dir,
-                cost=0,
+                cost=proj_cfg.const.COST_SUB,
             )
             main_evl_sims(
                 sim_type=args.type,
@@ -634,7 +634,7 @@ if __name__ == "__main__":
                 tests=test_mdls,
                 signals_dir=proj_cfg.sig_frm_mdl_prd_dir,
                 ret_dir=proj_cfg.test_return_dir,
-                cost=0
+                cost=proj_cfg.const.COST_SUB
             )
             main_evl_sims(
                 sim_type=args.type,
@@ -664,7 +664,7 @@ if __name__ == "__main__":
                 rets=proj_cfg.get_raw_test_rets(),
                 signals_dir=proj_cfg.sig_frm_mdl_opt_dir,
                 ret_dir=proj_cfg.test_return_dir,
-                cost=0,
+                cost=proj_cfg.const.COST_SUB,
             )
             main_evl_sims(
                 sim_type=args.type,
@@ -769,7 +769,7 @@ if __name__ == "__main__":
                 tests=test_mdls,
                 signals_dir=proj_cfg.sig_frm_mdl_prd_dir,
                 ret_dir=proj_cfg.test_return_dir,
-                cost=0
+                cost=proj_cfg.const.COST_SUB
             )
             grouped_sim_args = group_sim_args_by_factor_group(sim_args_list)
             main_optimize(
@@ -787,7 +787,7 @@ if __name__ == "__main__":
                 rets=proj_cfg.get_raw_test_rets(),
                 signals_dir=proj_cfg.sig_frm_mdl_opt_dir,
                 ret_dir=proj_cfg.test_return_dir,
-                cost=0,
+                cost=proj_cfg.const.COST_SUB,
             )
             grouped_sim_args = group_sim_args_by_ret_prc(sim_args_list)
             main_optimize(

@@ -445,7 +445,6 @@ class CCfgFactorEXR(CCfgFactor):
 
 @dataclass(frozen=True)
 class CCfgFactorSMT(CCfgFactor):
-    wins: list[int]
     lbds: list[float]
 
     @property
@@ -454,12 +453,9 @@ class CCfgFactorSMT(CCfgFactor):
 
     @property
     def factor_names(self) -> TFactorNames:
-        n_prc = [TFactorName(f"{self.factor_class}{w:03d}T{int(l * 10):02d}P_RAW") for w, l in
-                 ittl.product(self.wins, self.lbds)]
-        n_ret = [TFactorName(f"{self.factor_class}{w:03d}T{int(l * 10):02d}R_RAW") for w, l in
-                 ittl.product(self.wins, self.lbds)]
+        n_prc = [TFactorName(f"{self.factor_class}T{int(lbd * 10):02d}P_RAW") for lbd in self.lbds]
+        n_ret = [TFactorName(f"{self.factor_class}T{int(lbd * 10):02d}R_RAW") for lbd in self.lbds]
         return TFactorNames(n_prc + n_ret)
-
 
 @dataclass(frozen=True)
 class CCfgFactorRWTC(CCfgFactor):
@@ -794,6 +790,7 @@ class CCfgSim:
 @dataclass(frozen=True)
 class CCfgConst:
     COST: float
+    COST_SUB: float
     SECTORS: list[str]
     LAG: int
 

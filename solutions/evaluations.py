@@ -156,7 +156,7 @@ def main_evl_sims(
         call_multiprocess: bool,
         processes: int,
 ):
-    desc = "Calculating evaluations for neutralized factors"
+    desc = "Calculating evaluations for simulations"
     evl_sims: list[dict] = []
     if call_multiprocess:
         with Progress() as pb:

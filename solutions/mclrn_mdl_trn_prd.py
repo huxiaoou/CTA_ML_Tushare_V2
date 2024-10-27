@@ -169,7 +169,7 @@ class __CMclrn:
             x, y = x_data.values, y_data.values
         grid_cv_seeker = GridSearchCV(self.prototype, self.param_grid, cv=self.cv)
         self.fitted_estimator = grid_cv_seeker.fit(x, y)
-        # self.display_fitted_estimator()
+        self.display_fitted_estimator()
         return 0
 
     def check_model_existence(self, month_id: str) -> bool:
@@ -354,8 +354,6 @@ class CMclrnLGBM(__CMclrn):
             max_depth: list[int],
             num_leaves: list[int],
             learning_rate: list[float],
-            min_child_samples: list[int],
-            max_bin: list[int],
             metric: list[str],
             **kwargs,
     ):
@@ -366,17 +364,22 @@ class CMclrnLGBM(__CMclrn):
             "max_depth": max_depth,
             "num_leaves": num_leaves,
             "learning_rate": learning_rate,
-            "min_child_samples": min_child_samples,
-            "max_bin": max_bin,
             "metric": metric,
         }
         self.prototype = lgb.LGBMRegressor(
             # other fixed parameters
-            force_row_wise=True,
+            force_row_wise=True,  # cpu device only
             verbose=-1,
             random_state=self.RANDOM_STATE,
-            device_type="gpu",
+            # device_type="gpu", # for small data cpu is much faster
         )
+
+    def display_fitted_estimator(self) -> None:
+        best_estimator = self.fitted_estimator.best_estimator_
+        text = f"n_estimator = {best_estimator.n_estimators}," \
+               f"num_leaves = {best_estimator.num_leaves}," \
+               f"learning_rate = {best_estimator.learning_rate}"
+        print(text)
 
 
 class CMclrnXGB(__CMclrn):

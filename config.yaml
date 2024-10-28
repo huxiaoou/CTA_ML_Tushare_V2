@@ -210,7 +210,7 @@ sim:
   wins: [ 1 ]
 optimize:
   win: 60
-  lbd: 10
+  lbd: 1
 
 # ------- database structure -------
 db_struct:

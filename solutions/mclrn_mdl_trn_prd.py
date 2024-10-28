@@ -11,7 +11,7 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.linear_model import Ridge
 from husfort.qcalendar import CCalendar
 from husfort.qsqlite import CDbStruct, CMgrSqlDb
-from husfort.qutility import qtimer, SFG, SFY, check_and_makedirs, error_handler
+from husfort.qutility import SFG, SFY, check_and_makedirs, error_handler
 from typedef import TUniverse, TReturnName
 from typedef import TFactorClass, TFactorNames
 from typedef import CTestMdl

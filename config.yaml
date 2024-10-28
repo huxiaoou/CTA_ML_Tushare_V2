@@ -209,7 +209,7 @@ prd:
 sim:
   wins: [ 1 ]
 optimize:
-  win: 60
+  win: 20
   lbd: 0.1
 
 # ------- database structure -------

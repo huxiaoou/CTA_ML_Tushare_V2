@@ -376,9 +376,11 @@ class CMclrnLGBM(__CMclrn):
 
     def display_fitted_estimator(self) -> None:
         best_estimator = self.fitted_estimator.best_estimator_
-        text = f"n_estimator = {best_estimator.n_estimators}," \
-               f"num_leaves = {best_estimator.num_leaves}," \
-               f"learning_rate = {best_estimator.learning_rate}"
+        score = self.fitted_estimator.best_score_
+        text = f"n_estimator = {best_estimator.n_estimators:>2d}," \
+               f"num_leaves = {best_estimator.num_leaves:>2d}," \
+               f"learning_rate = {best_estimator.learning_rate:>4.2f}, " \
+               f"score = {score:>9.6f}, "
         print(text)
 
 

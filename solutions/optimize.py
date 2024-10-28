@@ -3,7 +3,7 @@ import pandas as pd
 from rich.progress import track
 from husfort.qcalendar import CCalendar
 from husfort.qsqlite import CMgrSqlDb
-from husfort.qoptimization import COptimizerPortfolioSharpe
+from husfort.qoptimization import COptimizerPortfolioUtility
 from husfort.qutility import check_and_makedirs
 from solutions.shared import gen_opt_wgt_db, gen_nav_db
 from typedef import CSimArgs, TSimGrpIdByFacGrp, TRetPrc
@@ -13,13 +13,14 @@ class COptimizer:
     CONST_SAFE_SHIFT = 32  # make sure it's long enough to cover last month end trade date
     CONST_SAFE_RET_LENGTH = 10
 
-    def __init__(self, x: pd.DataFrame, win: int, save_dir: str, save_id: str):
+    def __init__(self, x: pd.DataFrame, lbd: float, win: int, save_dir: str, save_id: str):
         """
 
         :param x: x is a nav dataFrame, with index = "trade_date",
                   columns = assets
         """
         self.x = x
+        self.lbd = lbd
         self.win = win
         self.save_dir = save_dir
         self.save_id = save_id
@@ -33,7 +34,7 @@ class COptimizer:
             mu = ret_data.mean()
             cov = ret_data.cov()
             bounds = [(-1.5 / p, 1.5 / p)] * p
-            optimizer = COptimizerPortfolioSharpe(m=mu.values, v=cov.values, bounds=bounds)
+            optimizer = COptimizerPortfolioUtility(m=mu.values, v=cov.values, lbd=self.lbd, bounds=bounds)
             result = optimizer.optimize()
             wgt = result.x if result.success else default_val
         return pd.Series(data=wgt, index=self.x.columns.tolist())
@@ -94,7 +95,7 @@ class COptimizer:
 class COptimizerForGroupedSim(COptimizer):
     def __init__(
             self, group_id: TSimGrpIdByFacGrp | TRetPrc, sim_args_list: list[CSimArgs], sim_save_dir: str,
-            win: int, save_dir: str
+            lbd: float, win: int, save_dir: str
     ):
         if isinstance(group_id, tuple):
             save_id = ".".join(group_id)
@@ -103,7 +104,7 @@ class COptimizerForGroupedSim(COptimizer):
         else:
             raise TypeError(f"type of {group_id} is {type(group_id)}, which is illegal")
         x = self.__init_x(sim_args_list, sim_save_dir)
-        super().__init__(x=x, win=win, save_dir=save_dir, save_id=save_id)
+        super().__init__(x=x, lbd=lbd, win=win, save_dir=save_dir, save_id=save_id)
 
     def parse_asset_id_from_sim_args(self, sim_args: CSimArgs) -> str:
         raise NotImplementedError
@@ -138,7 +139,7 @@ class COptimizerForMdlOpt(COptimizerForGroupedSim):
 
 def main_optimize(
         grouped_sim_args: dict[TSimGrpIdByFacGrp | TRetPrc, list[CSimArgs]],
-        sim_save_dir: str, win: int, save_dir: str,
+        sim_save_dir: str, lbd: float, win: int, save_dir: str,
         bgn_date: str, stp_date: str, calendar: CCalendar,
 ):
     check_and_makedirs(save_dir)
@@ -148,6 +149,7 @@ def main_optimize(
             group_id=group_id,
             sim_args_list=sim_args_list,
             sim_save_dir=sim_save_dir,
+            lbd=lbd,
             win=win,
             save_dir=save_dir,
         )

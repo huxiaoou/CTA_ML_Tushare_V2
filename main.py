@@ -775,6 +775,7 @@ if __name__ == "__main__":
             main_optimize(
                 grouped_sim_args=grouped_sim_args,
                 sim_save_dir=proj_cfg.sim_frm_mdl_prd_dir,
+                lbd=proj_cfg.optimize["lbd"],
                 win=proj_cfg.optimize["win"],
                 save_dir=proj_cfg.opt_frm_mdl_prd_dir,
                 bgn_date=bgn_date, stp_date=stp_date, calendar=calendar,
@@ -793,6 +794,7 @@ if __name__ == "__main__":
             main_optimize(
                 grouped_sim_args=grouped_sim_args,
                 sim_save_dir=proj_cfg.sim_frm_mdl_opt_dir,
+                lbd=proj_cfg.optimize["lbd"],
                 win=proj_cfg.optimize["win"],
                 save_dir=proj_cfg.opt_frm_mdl_opt_dir,
                 bgn_date=bgn_date, stp_date=stp_date, calendar=calendar,

@@ -203,14 +203,14 @@ available:
   win: 5
   amount_threshold: 50000.00 # unit = WANYUAN, >= 50000 WANYUAN, or 500 million
 trn:
-  wins: [ 120, 240, 480 ]
+  wins: [ 120, 240 ]
 prd:
-  wins: [ 5, 10, 15 ]
+  wins: [ 5, 10 ]
 sim:
   wins: [ 1 ]
 optimize:
   win: 20
-  lbd: 0.01
+  lbd: 0.1
 
 # ------- database structure -------
 db_struct:

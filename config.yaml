@@ -346,7 +346,7 @@ factor_groups:
 cv: 5
 mclrn:
   Ridge:
-    alpha: [ 0.01 ]
+    alpha: [ 100, 500, 1000, 5000 ]
   #  LGBM:
   #    boosting_type: [ "gbdt" ]
   #    n_estimators: [ 3, 5, 10 ]

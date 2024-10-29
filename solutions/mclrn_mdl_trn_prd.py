@@ -340,10 +340,10 @@ class CMclrnRidge(__CMclrn):
     def display_fitted_estimator(self) -> None:
         alpha = self.fitted_estimator.best_estimator_.alpha
         score = self.fitted_estimator.best_score_
-        coef = self.fitted_estimator.best_estimator_.coef_
+        # coef = self.fitted_estimator.best_estimator_.coef_
         text = f"{self.test.save_tag_mdl}, best alpha = {alpha:>6.1f}, score = {score:>9.6f}"
         print(text)
-        print(coef)
+        # print(coef)
 
 
 class CMclrnLGBM(__CMclrn):

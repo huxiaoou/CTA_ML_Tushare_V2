@@ -377,8 +377,8 @@ class CMclrnLGBM(__CMclrn):
     def display_fitted_estimator(self) -> None:
         best_estimator = self.fitted_estimator.best_estimator_
         score = self.fitted_estimator.best_score_
-        text = f"n_estimator = {best_estimator.n_estimators:>2d}," \
-               f"num_leaves = {best_estimator.num_leaves:>2d}," \
+        text = f"n_estimator = {best_estimator.n_estimators:>2d}, " \
+               f"num_leaves = {best_estimator.num_leaves:>2d}, " \
                f"learning_rate = {best_estimator.learning_rate:>4.2f}, " \
                f"score = {score:>9.6f}, "
         print(text)
@@ -410,8 +410,17 @@ class CMclrnXGB(__CMclrn):
             # other fixed parameters
             verbosity=0,
             random_state=self.RANDOM_STATE,
-            device="cuda",  # cpu maybe faster for data not in large scale.
+            # device="cuda",  # cpu maybe faster for data not in large scale.
         )
+
+    def display_fitted_estimator(self) -> None:
+        best_estimator = self.fitted_estimator.best_estimator_
+        score = self.fitted_estimator.best_score_
+        text = f"n_estimator = {best_estimator.n_estimators:>2d}, " \
+               f"max_leaves = {best_estimator.max_leaves:>2d}, " \
+               f"learning_rate = {best_estimator.learning_rate:>4.2f}, " \
+               f"score = {score:>9.6f}, "
+        print(text)
 
 
 """

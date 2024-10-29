@@ -146,8 +146,8 @@ class CCfgFactorBASIS(CCfgFactor):
     @property
     def factor_names(self) -> TFactorNames:
         n0 = [TFactorName(f"{self.factor_class}{w:03d}_RAW") for w in self.wins]
-        n1 = [TFactorName(f"{self.factor_class}D{w:03d}_RAW") for w in self.wins]
-        return TFactorNames(n0 + n1)
+        # n1 = [TFactorName(f"{self.factor_class}D{w:03d}_RAW") for w in self.wins]
+        return TFactorNames(n0)
 
 
 @dataclass(frozen=True)
@@ -160,9 +160,9 @@ class CCfgFactorTS(CCfgFactor):
 
     @property
     def factor_names(self) -> TFactorNames:
-        n0 = [TFactorName(f"{self.factor_class}{w:03d}_RAW") for w in self.wins]
+        # n0 = [TFactorName(f"{self.factor_class}{w:03d}_RAW") for w in self.wins]
         n1 = [TFactorName(f"{self.factor_class}D{w:03d}_RAW") for w in self.wins]
-        return TFactorNames(n0 + n1)
+        return TFactorNames(n1)
 
 
 @dataclass(frozen=True)
@@ -176,10 +176,10 @@ class CCfgFactorS0BETA(CCfgFactor):
     @property
     def factor_names(self) -> TFactorNames:
         n0 = [TFactorName(f"{self.factor_class}{w:03d}_RAW") for w in self.wins]
-        n1 = [TFactorName(f"{self.factor_class}{self.wins[0]:03d}D{w:03d}_RAW") for w in self.wins[1:]]
+        # n1 = [TFactorName(f"{self.factor_class}{self.wins[0]:03d}D{w:03d}_RAW") for w in self.wins[1:]]
         # n2 = [f"{self.factor_class}{w:03d}RES_RAW" for w in self.wins]
         # n3 = [f"{self.factor_class}{w:03d}RESSTD_RAW" for w in self.wins]
-        return TFactorNames(n0 + n1)
+        return TFactorNames(n0)
 
 
 @dataclass(frozen=True)
@@ -193,10 +193,10 @@ class CCfgFactorS1BETA(CCfgFactor):
     @property
     def factor_names(self) -> TFactorNames:
         n0 = [TFactorName(f"{self.factor_class}{w:03d}_RAW") for w in self.wins]
-        n1 = [TFactorName(f"{self.factor_class}{self.wins[0]:03d}D{w:03d}_RAW") for w in self.wins[1:]]
+        # n1 = [TFactorName(f"{self.factor_class}{self.wins[0]:03d}D{w:03d}_RAW") for w in self.wins[1:]]
         # n2 = [f"{self.factor_class}{w:03d}RES_RAW" for w in self.wins]
         # n3 = [f"{self.factor_class}{w:03d}RESSTD_RAW" for w in self.wins]
-        return TFactorNames(n0 + n1)
+        return TFactorNames(n0)
 
 
 @dataclass(frozen=True)
@@ -210,10 +210,10 @@ class CCfgFactorCBETA(CCfgFactor):
     @property
     def factor_names(self) -> TFactorNames:
         n0 = [TFactorName(f"{self.factor_class}{w:03d}_RAW") for w in self.wins]
-        n1 = [TFactorName(f"{self.factor_class}{self.wins[0]:03d}D{w:03d}_RAW") for w in self.wins[1:]]
+        # n1 = [TFactorName(f"{self.factor_class}{self.wins[0]:03d}D{w:03d}_RAW") for w in self.wins[1:]]
         # n2 = [f"{self.factor_class}{w:03d}RES_RAW" for w in self.wins]
         # n3 = [f"{self.factor_class}{w:03d}RESSTD_RAW" for w in self.wins]
-        return TFactorNames(n0 + n1)
+        return TFactorNames(n0)
 
 
 @dataclass(frozen=True)
@@ -227,10 +227,10 @@ class CCfgFactorIBETA(CCfgFactor):
     @property
     def factor_names(self) -> TFactorNames:
         n0 = [TFactorName(f"{self.factor_class}{w:03d}_RAW") for w in self.wins]
-        n1 = [TFactorName(f"{self.factor_class}{self.wins[0]:03d}D{w:03d}_RAW") for w in self.wins[1:]]
+        # n1 = [TFactorName(f"{self.factor_class}{self.wins[0]:03d}D{w:03d}_RAW") for w in self.wins[1:]]
         # n2 = [f"{self.factor_class}{w:03d}RES_RAW" for w in self.wins]
         # n3 = [f"{self.factor_class}{w:03d}RESSTD_RAW" for w in self.wins]
-        return TFactorNames(n0 + n1)
+        return TFactorNames(n0)
 
 
 @dataclass(frozen=True)
@@ -244,10 +244,10 @@ class CCfgFactorPBETA(CCfgFactor):
     @property
     def factor_names(self) -> TFactorNames:
         n0 = [TFactorName(f"{self.factor_class}{w:03d}_RAW") for w in self.wins]
-        n1 = [TFactorName(f"{self.factor_class}{self.wins[0]:03d}D{w:03d}_RAW") for w in self.wins[1:]]
+        # n1 = [TFactorName(f"{self.factor_class}{self.wins[0]:03d}D{w:03d}_RAW") for w in self.wins[1:]]
         # n2 = [f"{self.factor_class}{w:03d}RES_RAW" for w in self.wins]
         # n3 = [f"{self.factor_class}{w:03d}RESSTD_RAW" for w in self.wins]
-        return TFactorNames(n0 + n1)
+        return TFactorNames(n0)
 
 
 @dataclass(frozen=True)
@@ -417,13 +417,13 @@ class CCfgFactorAMP(CCfgFactor):
 
     @property
     def factor_names(self) -> TFactorNames:
-        nh = [TFactorName(f"{self.factor_class}{w:03d}T{int(l * 10):02d}H_RAW") for w, l in
-              ittl.product(self.wins, self.lbds)]
+        # nh = [TFactorName(f"{self.factor_class}{w:03d}T{int(l * 10):02d}H_RAW") for w, l in
+        #       ittl.product(self.wins, self.lbds)]
         nl = [TFactorName(f"{self.factor_class}{w:03d}T{int(l * 10):02d}L_RAW") for w, l in
               ittl.product(self.wins, self.lbds)]
         nd = [TFactorName(f"{self.factor_class}{w:03d}T{int(l * 10):02d}D_RAW") for w, l in
               ittl.product(self.wins, self.lbds)]
-        return TFactorNames(nh + nl + nd)
+        return TFactorNames(nl + nd)
 
 
 @dataclass(frozen=True)
@@ -457,6 +457,7 @@ class CCfgFactorSMT(CCfgFactor):
         n_ret = [TFactorName(f"{self.factor_class}T{int(lbd * 10):02d}R_RAW") for lbd in self.lbds]
         return TFactorNames(n_prc + n_ret)
 
+
 @dataclass(frozen=True)
 class CCfgFactorRWTC(CCfgFactor):
     wins: list[int]
@@ -469,9 +470,9 @@ class CCfgFactorRWTC(CCfgFactor):
     def factor_names(self) -> TFactorNames:
         nu = [TFactorName(f"{self.factor_class}{w:03d}U_RAW") for w in self.wins]
         nd = [TFactorName(f"{self.factor_class}{w:03d}D_RAW") for w in self.wins]
-        nt = [TFactorName(f"{self.factor_class}{w:03d}T_RAW") for w in self.wins]
+        # nt = [TFactorName(f"{self.factor_class}{w:03d}T_RAW") for w in self.wins]
         nv = [TFactorName(f"{self.factor_class}{w:03d}V_RAW") for w in self.wins]
-        return TFactorNames(nu + nd + nt + nv)
+        return TFactorNames(nu + nd + nv)
 
 
 @dataclass(frozen=True)

@@ -9,6 +9,8 @@ import lightgbm as lgb
 import xgboost as xgb
 from sklearn.model_selection import GridSearchCV
 from sklearn.linear_model import Ridge
+from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
+from sklearn.base import BaseEstimator
 from husfort.qcalendar import CCalendar
 from husfort.qsqlite import CDbStruct, CMgrSqlDb
 from husfort.qutility import SFG, SFY, check_and_makedirs, error_handler
@@ -16,6 +18,38 @@ from typedef import TUniverse, TReturnName
 from typedef import TFactorClass, TFactorNames
 from typedef import CTestMdl
 from solutions.shared import gen_fac_neu_db, gen_tst_ret_neu_db, gen_prdct_db
+
+
+class ICIRRegressor(BaseEstimator):
+    def __init__(self, groupby_var_loc: int = 0):
+        self.groupby_var_loc = groupby_var_loc
+
+    def fit(self, X, y):
+        # Check that X and y have correct shape
+        X, y = check_X_y(X, y)  # save it as pure numeric array
+
+        data = np.column_stack((X, y))
+        df = pd.DataFrame(data=data)
+        ic_data = df.groupby(by=self.groupby_var_loc).apply(
+            lambda z: z.iloc[:, :-1].corrwith(z.iloc[:, -1]), include_groups=False
+        )
+        ic_mean = ic_data.mean()
+        ic_std = ic_data.std()
+        s = (ic_mean / ic_std).values
+        self.icir_ = s / np.abs(s).sum()
+        return self
+
+    def predict(self, X):
+        # Check if fit has been called
+        check_is_fitted(self)
+
+        # Input validation
+        X = check_array(X)
+
+        data = np.delete(X, obj=self.groupby_var_loc, axis=1)  # type: ignore
+        pred = data @ self.icir_
+        return pred
+
 
 """
 Part I: Base class for Machine Learning
@@ -198,6 +232,7 @@ class __CMclrn:
                     'sklearn.metrics._scorer._PassthroughScorer',
                     'sklearn.utils._metadata_requests.MetadataRequest',
                     'sklearn.utils._metadata_requests.MethodMetadataRequest',
+                    'solutions.mclrn_mdl_trn_prd.ICIRRegressor',
                 ],
             )
             return True
@@ -423,6 +458,24 @@ class CMclrnXGB(__CMclrn):
         print(text)
 
 
+class CMclrnICIR(__CMclrn):
+    def __init__(self, **kwargs):
+        super().__init__(using_instru=False, **kwargs)
+        self.prototype = ICIRRegressor(groupby_var_loc=0)
+
+    def fit_estimator(self, x_data: pd.DataFrame, y_data: pd.Series):
+        x, y = x_data.reset_index(level="trade_date"), y_data
+        x["trade_date"] = x["trade_date"].astype(int)
+        self.fitted_estimator = self.prototype.fit(x, y)
+        self.display_fitted_estimator()
+        return 0
+
+    def apply_estimator(self, x_data: pd.DataFrame) -> pd.Series:
+        x = x_data.reset_index(level="trade_date")
+        pred = self.fitted_estimator.predict(X=x)  # type:ignore
+        return pd.Series(data=pred, name=self.y_col, index=x_data.index)
+
+
 """
 Part III: Process wrapper for test
 
@@ -447,6 +500,7 @@ def process_for_cMclrn(
         "Ridge": CMclrnRidge,
         "LGBM": CMclrnLGBM,
         "XGB": CMclrnXGB,
+        "ICIR": CMclrnICIR,
     }
     if not (mclrn_type := x.get(test.model.model_type)):
         raise ValueError(f"model type = {test.model.model_type} is wrong")

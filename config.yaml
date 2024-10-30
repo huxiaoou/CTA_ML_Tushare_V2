@@ -322,14 +322,12 @@ factors:
     natr: 10
 
 factor_groups:
-  MTM: [ MTM ]
-  SKEW: [ SKEW ]
+  MTM: [ MTM, SKEW ]
   STOCK: [ RS ]
-  BASIS: [ BASIS ]
-  TS: [ TS ]
-  BETA: [ S0BETA, S1BETA, CBETA, IBETA, PBETA ]
+  BASIS: [ BASIS , TS ]
+  BETA: [ S0BETA, PBETA ]
   TURNOVER: [ CTP, CSP ]
-  POSITION: [ NOI, NDOI ]
+  POSITION: [ NOI ]
   HFT: [ AMP, EXR, SMT, RWTC ]
   TA: [ TA ]
 

@@ -251,7 +251,8 @@ class CFactorNeu(CFactorGeneric):
             how="left",
         ).sort_values(by=["trade_date", "sectorL1"])
         neu_factor_data = neutralize_by_date(
-            net_ref_factor_data, old_names=self.ref_factor.factor_names, new_names=self.factor_names,
+            using_rank=True,
+            raw_data=net_ref_factor_data, old_names=self.ref_factor.factor_names, new_names=self.factor_names,
             date_name="trade_date", sec_name="sectorL1", instru_name="instrument",
         )
         neu_factor_data[self.factor_names] = neu_factor_data[self.factor_names].fillna(0)

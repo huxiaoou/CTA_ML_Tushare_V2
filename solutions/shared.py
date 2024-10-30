@@ -18,6 +18,7 @@ def convert_mkt_idx(mkt_idx: str, prefix: str = "I") -> str:
 # ---------------------------------------
 
 def neutralize_by_date(
+        using_rank: bool,
         raw_data: pd.DataFrame,
         old_names: list[str],
         new_names: list[str],
@@ -27,6 +28,7 @@ def neutralize_by_date(
 ) -> pd.DataFrame:
     """
 
+    :param using_rank:
     :param raw_data: a dataframe with columns = [date_name, instru_name, sec_name] + old_names
     :param old_names:
     :param new_names:
@@ -39,24 +41,27 @@ def neutralize_by_date(
 
     with Progress() as pb:
         task = pb.add_task(description="Neutralizing", total=3)
+        if using_rank:
+            # --- get instrument rank for each day
+            rank_data = (
+                raw_data[[date_name] + old_names]
+                .groupby(by=date_name, group_keys=False)[old_names]
+                .apply(lambda z: z.rank() / (z.count() + 1))
+            )
+            pb.update(task, advance=1)
 
-        # --- get instrument rank for each day
-        rank_data = (
-            raw_data[[date_name] + old_names]
-            .groupby(by=date_name, group_keys=False)[old_names]
-            .apply(lambda z: z.rank() / (z.count() + 1))
-        )
-        pb.update(task, advance=1)
-
-        # --- map rank to random variable with normal distribution
-        norm_rv_data = rank_data.apply(sps.norm.ppf)
-        norm_data = pd.merge(
-            left=raw_data[[date_name, instru_name, sec_name]],
-            right=norm_rv_data,
-            how="inner",
-            left_index=True, right_index=True,
-        )
-        pb.update(task, advance=1)
+            # --- map rank to random variable with normal distribution
+            norm_rv_data = rank_data.apply(sps.norm.ppf)
+            norm_data = pd.merge(
+                left=raw_data[[date_name, instru_name, sec_name]],
+                right=norm_rv_data,
+                how="inner",
+                left_index=True, right_index=True,
+            )
+            pb.update(task, advance=1)
+        else:
+            norm_data = raw_data.copy()
+            pb.update(task, advance=2)
 
         # --- neutralize for each sector and day
         neu_data = (

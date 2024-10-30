@@ -218,7 +218,8 @@ class CTstRetNeu(_CTstRet):
             how="left",
         ).sort_values(by=["trade_date", "sectorL1"])
         tst_ret_neu_data = neutralize_by_date(
-            net_ref_tst_ret_data, old_names=self.ref_rets, new_names=self.rets,
+            using_rank=False,
+            raw_data=net_ref_tst_ret_data, old_names=self.ref_rets, new_names=self.rets,
             date_name="trade_date", sec_name="sectorL1", instru_name="instrument",
         )
         tst_ret_neu_data = tst_ret_neu_data.query(f"trade_date >= '{base_bgn_date}' & trade_date <= '{base_stp_date}'")

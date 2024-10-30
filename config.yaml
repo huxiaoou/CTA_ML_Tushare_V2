@@ -322,23 +322,25 @@ factors:
     natr: 10
 
 factor_groups:
-  MTM: [ MTM, SKEW ]
-  STOCK: [ RS ]
-  BASIS: [ BASIS , TS ]
-  BETA: [ S0BETA, PBETA ]
-  TURNOVER: [ CTP, CSP ]
-  POSITION: [ NOI ]
-  HFT: [ AMP, EXR, SMT, RWTC ]
-  TA: [ TA ]
-
-  #  G0: [
-  #    MTM, SKEW, RS, BASIS, TS,
-  #    S0BETA, S1BETA, CBETA, IBETA, PBETA,
-  #    CTP, CVP, CSP,
-  #    NOI, NDOI,
-  #    AMP, EXR, SMT, RWTC,
-  #    TA
-  #  ]
+  #  MTM: [ MTM, SKEW ]
+  #  STOCK: [ RS ]
+  #  BASIS: [ BASIS , TS ]
+  #  BETA: [ S0BETA, PBETA ]
+  #  TURNOVER: [ CTP, CSP ]
+  #  POSITION: [ NOI ]
+  #  HFT: [ AMP, EXR, SMT, RWTC ]
+  #  TA: [ TA ]
+  G0: [
+    MTM, SKEW,
+    CTP, CSP, CVP,
+    AMP, EXR, SMT, RWTC,
+    TA
+  ]
+  G1: [
+    RS, BASIS, TS,
+    S0BETA, S1BETA, CBETA, IBETA, PBETA,
+    NOI, NDOI,
+  ]
 
 # ------- models -------
 cv: 5

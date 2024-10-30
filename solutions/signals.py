@@ -54,7 +54,8 @@ class _CSignal:
     @staticmethod
     def map_factor_to_signal(data: pd.DataFrame) -> pd.DataFrame:
         n = len(data)
-        data["weight"] = [1] * int(n / 2) + [0] * (n % 2) + [-1] * int(n / 2)
+        k, d = n // 3, n % 3
+        data["weight"] = [1] * k + [0] * (k + d) + [-1] * k
         if (abs_sum := data["weight"].abs().sum()) > 0:
             data["weight"] = data["weight"] / abs_sum
         return data[["trade_date", "instrument", "weight"]]
